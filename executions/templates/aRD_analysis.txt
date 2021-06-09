@@ -1,0 +1,23 @@
+cohort_analysis){
+	. ~soft_bio_267/initializes/init_pets
+	?
+	coPatReporter.rb -i $disease_hpo_file -p HPOID -d DiseaseID -C 20 -m $similarity_measure -o disease_clusters
+}
+
+cdlib_analysis){
+	source ~soft_bio_267/initializes/init_anaconda
+	#send cdlib_clusterize.py copy to ../../scripts before submit code
+	export PATH=~soft_bio_267/programs/x86_64/scripts:$PATH
+	export PATH=/mnt/scratch/users/bio_267_uma/elenarojano/projects/angiogenesis_raquel/disease_clustering/scripts:$PATH
+	awk '{ if ($3 >= $combined_score) print $0}' $string_network | tail -n +2 > combScore_"$combined_score"_string.txt
+	clusterORPHA_to_clusterGEN.rb -i cohort_analysis)/temp/"$similarity_measure"_clusters.txt -t $disease_gene_file -o clustered_genes_"$gene_filter"_"$combined_score".txt -m $gene_filter -F $gene_filter_value
+	?
+	cdlib_clusterize.py -i combScore_"$combined_score"_string.txt -m external -g -E clusters_ave_emb_string_"$combined_score".txt -e clustered_genes_"$gene_filter"_"$combined_score".txt
+	aggregate_column_data.rb -i clustered_genes_"$gene_filter"_"$combined_score".txt -x 0 -a 1 > genes_by_cluster_"$gene_filter"_"$combined_score".txt
+}
+
+%cluster_profiler){
+	source ~soft_bio_267/initializes/init_degenes_hunter
+	?
+	clusters_to_enrichment.R -i cdlib_analysis)/cluster_genes.txt -w 5 -t 4 -F -k "SYMBOL" -p 0.05 -o aRD_gene_clusters
+}
