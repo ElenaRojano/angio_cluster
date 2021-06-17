@@ -1,4 +1,5 @@
 #! /usr/bin/env ruby
+# Code to get diseases and in which clusters are to get cluster IDs and the list of genes by disease
 
 require 'optparse'
 
@@ -107,7 +108,9 @@ File.open(options[:output_file], 'w') do |f|
 	final_genes = []
 	saved_genes.each do |clusterID, genes|
 		unless genes.empty?
-			f.puts "#{clusterID}\t#{genes.uniq.join(',')}"
+			genes.each do |gene|
+				f.puts "#{clusterID}\t#{gene}"
+			end
 		end
 	end
 end
