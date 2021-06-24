@@ -20,5 +20,5 @@ cdlib_analysis){
 cluster_profiler){
 	source ~soft_bio_267/initializes/init_degenes_hunter
 	?
-	clusters_to_enrichment.R -i cdlib_analysis)/genes_by_cluster_"$gene_filter"_"$combined_score"_interactors.txt -w 5 -t 4 -F -k "SYMBOL" -p 0.05 -o aRD_gene_clusters
+	clusters_to_enrichment.R -i cdlib_analysis)/genes_by_cluster_"$gene_filter"_"$combined_score".txt -w 5 -t 4 -F -k "SYMBOL" -p 0.05 -o aRD_gene_clusters
 }
