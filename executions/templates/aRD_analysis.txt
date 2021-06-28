@@ -1,19 +1,33 @@
 cohort_analysis){
-	. ~soft_bio_267/initializes/init_pets
+	source ~soft_bio_267/initializes/init_pets
 	?
 	coPatReporter.rb -i $disease_hpo_file -p HPOID -d DiseaseID -C 20 -m $similarity_measure -o disease_clusters
 }
 
-cdlib_analysis){
+prepare_disease_clusters){
 	source ~soft_bio_267/initializes/init_anaconda
-	#send cdlib_clusterize.py copy to ../../scripts before submit code
+	source ~soft_bio_267/initializes/init_netanalyzer
 	export PATH=~soft_bio_267/programs/x86_64/scripts:$PATH
 	export PATH=/mnt/scratch/users/bio_267_uma/elenarojano/projects/angiogenesis_raquel/disease_clustering/scripts:$PATH
 	awk '{ if ($3 >= $combined_score) print $0}' $string_network | tail -n +2 > combScore_"$combined_score"_string.txt
-	clusterORPHA_to_clusterGEN.rb -i cohort_analysis)/temp/"$similarity_measure"_clusters.txt -t $disease_gene_file -o clustered_genes_"$gene_filter"_"$combined_score".txt -m $min_group -F $gene_filter
-	group_interactors.rb -i combScore_"$combined_score"_string.txt -c clustered_genes_"$gene_filter"_"$combined_score".txt -o clustered_genes_"$gene_filter"_"$combined_score"_interactors.txt
 	?
-	cdlib_clusterize.py -i combScore_"$combined_score"_string.txt -m external -g -E clusters_ave_emb_string_"$combined_score".txt -e clustered_genes_"$gene_filter"_"$combined_score"_interactors.txt	
+	clusterORPHA_to_clusterGEN.rb -i cohort_analysis)/temp/"$similarity_measure"_clusters.txt -t $disease_gene_file -o clustered_genes_"$gene_filter"_"$combined_score".txt -m $min_group -F $gene_filter
+	LAYERS='gene,[A-Za-z0-9]'
+	NetAnalyzer.rb -i combScore_"$combined_score"_string.txt -l $LAYERS -G clustered_genes_"$gene_filter"_"$combined_score".txt -M -o assoc.txt
+	cdlib_clusterize.py -i combScore_"$combined_score"_string.txt -m external -g -E cluster_metrics.txt -e clustered_genes_"$gene_filter"_"$combined_score".txt	
+	aggregate_column_data.rb -i clustered_genes_"$gene_filter"_"$combined_score".txt -x 0 -a 1 > genes_by_cluster_"$gene_filter"_"$combined_score".txt
+}
+
+analyze_clusters){
+	source ~soft_bio_267/initializes/init_anaconda
+	source ~soft_bio_267/initializes/init_netanalyzer
+	export PATH=~soft_bio_267/programs/x86_64/scripts:$PATH
+	export PATH=/mnt/scratch/users/bio_267_uma/elenarojano/projects/angiogenesis_raquel/disease_clustering/scripts:$PATH
+	?
+	group_interactors.rb -i prepare_disease_clusters)/combScore_"$combined_score"_string.txt -c prepare_disease_clusters)/clustered_genes_"$gene_filter"_"$combined_score".txt -o clustered_genes_"$gene_filter"_"$combined_score"_interactors.txt -n $active_interactors
+	LAYERS='gene,[A-Za-z0-9]'
+	NetAnalyzer.rb -i prepare_disease_clusters)/combScore_"$combined_score"_string.txt -l $LAYERS -G clustered_genes_"$gene_filter"_"$combined_score"_interactors.txt -M -o assoc.txt
+	cdlib_clusterize.py -i prepare_disease_clusters)/combScore_"$combined_score"_string.txt -m external -g -E cluster_metrics.txt -e clustered_genes_"$gene_filter"_"$combined_score"_interactors.txt	
 	aggregate_column_data.rb -i clustered_genes_"$gene_filter"_"$combined_score"_interactors.txt -x 0 -a 1 > genes_by_cluster_"$gene_filter"_"$combined_score".txt
 }
 

@@ -1,17 +1,15 @@
 #! /usr/bin/env bash
 
-#SBATCH --cpus=1
-#SBATCH --mem=20gb
-#SBATCH --time=7-00:00:00
-#SBATCH --constraint=cal
+#SBATCH --cpus-per-task=1
+#SBATCH --mem='20gb'
+#SBATCH --time='1:00:00'
+#SBATCH --constraint=sd
 #SBATCH --error=job.%J.err
 #SBATCH --output=job.%J.out
 
 export PATH=/mnt/scratch/users/bio_267_uma/elenarojano/projects/angiogenesis_raquel/disease_clustering/scripts:$PATH
 
 global_path='/mnt/scratch/users/bio_267_uma/elenarojano/projects/angiogenesis_raquel/disease_clustering'
-#disease_hpo_file=$global_path'/datasets/diseaseORPHA_HPO.txt'
-#disease_gene_file=$global_path'/datasets/diseaseORPHA_genNAME.txt'
 temp_files=$global_path'/executions/temp_files'
 output_folder=$global_path'/executions/aRD_workflow'
 orpha_codes=$global_path'/datasets/aRD_orpha_codes.txt'
@@ -38,6 +36,7 @@ if [ "$1" == "2" ]; then
 	combined_score_filts=( 900 )
 	similarity_measures=( "resnik" "lin" )
 	min_groups=( 0 1 2 )
+	active_interactors=20
 	for similarity_measure in "${similarity_measures[@]}"
 	do	
 		for min_group in "${min_groups[@]}"
@@ -52,11 +51,12 @@ if [ "$1" == "2" ]; then
 					\\$string_network=$temp_files/string_transl_network.txt,
 					\\$string_dict=$temp_files/human.name_2_string.tsv,
 					\\$combined_score=$combined_score,
+					\\$active_interactors=$active_interactors,
 					\\$min_group=$min_group,
 					\\$gene_filter=$gene_filter_value,
 					\\$disease_gene_file=$temp_files/orpha_genes.txt,
 					\\$disease_hpo_file=$temp_files/orpha_hpos.txt" | tr -d '[:space:]' `
-					AutoFlow -w templates/aRD_analysis.txt -t '7-00:00:00' -m '20gb' -c 9 -o $output_folder"/"$execution_name -n 'cal' -e -V $var_info $2
+					AutoFlow -w templates/aRD_analysis.txt -t '7-00:00:00' -m '20gb' -c 9 -o $output_folder"/"$execution_name -n 'sd' -e -V $var_info $2
 				done
 			done
 		done
