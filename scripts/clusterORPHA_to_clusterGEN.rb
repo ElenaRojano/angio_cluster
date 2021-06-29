@@ -1,5 +1,9 @@
 #! /usr/bin/env ruby
+
+##############################################################
+# Developed by R. Pagano. Refactored by E. Rojano.
 # Code to get diseases and in which clusters are to get cluster IDs and the list of genes by disease
+##############################################################
 
 require 'optparse'
 
@@ -33,15 +37,15 @@ def get_cluster_genes(orpha_genes_file, disease_clusters)
 			end
 		end
 	end
+	cluster_genes.delete_if{|cluster, genes_by_disease| genes_by_disease.length < 2} #remove clusters with a single disease 
 	return cluster_genes
 end
 
 def apply_filters(cluster_genes, filter, min_groups_per_gene)
 	saved_genes = {}
-	cluster_genes.each do |cluster, gene_groups|
-		next if gene_groups.length == 1
+	cluster_genes.each do |cluster, genes_by_disease|
 		stats = Hash.new(0)
-		gene_groups.each do |gene_group|
+		genes_by_disease.each do |gene_group|
 			gene_group.each do |gene| 
 				stats[gene] += 1
 			end 
@@ -49,7 +53,7 @@ def apply_filters(cluster_genes, filter, min_groups_per_gene)
 		filtered_genes = []
 		stats.each do |gene, number|
 			next if number < min_groups_per_gene
-			filtered_genes << gene if number.fdiv(gene_groups.length) >= filter
+			filtered_genes << gene if number.fdiv(genes_by_disease.length) >= filter
 		end
 		saved_genes[cluster] = filtered_genes
 	end
@@ -76,7 +80,7 @@ OptionParser.new do |opts|
 	end
 
 	options[:min_groups] = 0
-	opts.on("-m", "--min_groups INTEGER", "Min. groups per gene") do |data|
+	opts.on("-m", "--min_groups INTEGER", "Min. diseases per gene") do |data|
 		options[:min_groups] = data.to_i
 	end
 
@@ -96,9 +100,10 @@ end.parse!
 ##MAIN
 #################################
 
-# options[:filter_value] = 0, options[:min_groups] = 0 -> no filters
-# options[:filter_value] = 1, options[:min_groups] = 0 -> 
-# options[:filter_value] = 1, options[:min_groups] = 0.8 -> eliminate genes not presented in 80% of diseases
+# Clusters with a single disease are removed
+# options[:filter_value] = 0, options[:min_groups] = 0 -> no filters, genes union
+# options[:filter_value] = 0, options[:min_groups] = 2 -> one gene in at least two diseases by cluster 
+# options[:filter_value] = 0.6, options[:min_groups] = 2 -> one gene in at least two diseases AND in at least 60% of diseases by cluster
 
 disease_clusters = load_disease_clusters(options[:input_file])
 cluster_genes = get_cluster_genes(options[:orpha_genes], disease_clusters)

@@ -2,8 +2,8 @@
 
 #SBATCH --cpus-per-task=1
 #SBATCH --mem='20gb'
-#SBATCH --time='1:00:00'
-#SBATCH --constraint=sd
+#SBATCH --time='10:00:00'
+#SBATCH --constraint=cal
 #SBATCH --error=job.%J.err
 #SBATCH --output=job.%J.out
 
@@ -32,10 +32,10 @@ if [ "$1" == "2" ]; then
 	string_network=$global_path'/datasets/string_data.txt'
 	#trad_cluster_stringtogen.rb -i $string_network -d $temp_files"/human.name_2_string.tsv" -o temp_files/string_transl_network.txt -n temp_files/untranslated_genes.txt 
 	echo 'Launching analysis'
-	gene_filter_values=( 0.4 )
+	gene_filter_values=( 0 0.6 )
 	combined_score_filts=( 900 )
 	similarity_measures=( "resnik" "lin" )
-	min_groups=( 0 1 2 )
+	min_groups=( 0 2 )
 	active_interactors=20
 	for similarity_measure in "${similarity_measures[@]}"
 	do	
@@ -56,7 +56,7 @@ if [ "$1" == "2" ]; then
 					\\$gene_filter=$gene_filter_value,
 					\\$disease_gene_file=$temp_files/orpha_genes.txt,
 					\\$disease_hpo_file=$temp_files/orpha_hpos.txt" | tr -d '[:space:]' `
-					AutoFlow -w templates/aRD_analysis.txt -t '7-00:00:00' -m '20gb' -c 9 -o $output_folder"/"$execution_name -n 'sd' -e -V $var_info $2
+					AutoFlow -w templates/aRD_analysis.txt -t '7-00:00:00' -m '20gb' -c 9 -o $output_folder"/"$execution_name -n 'cal' -e -V $var_info $2
 				done
 			done
 		done

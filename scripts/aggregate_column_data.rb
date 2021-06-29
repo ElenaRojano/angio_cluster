@@ -1,5 +1,9 @@
 #! /usr/bin/env ruby
 
+##############################################################
+# Parse cluster info for enrichment analysis requirements
+##############################################################
+
 require 'optparse'
 
 options = {}
