@@ -51,5 +51,5 @@ input.each do |line|
 end
 
 agg_data.each do |key, values|
-	STDOUT.puts "#{key}\t#{values.join(',')}"
+	STDOUT.puts "#{key}\t#{values.uniq.join(',')}"
 end
