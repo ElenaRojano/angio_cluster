@@ -1,4 +1,4 @@
-cohort_analysis){
+%cohort_analysis){
 	source ~soft_bio_267/initializes/init_pets
 	?
 	coPatReporter.rb -i $disease_hpo_file -p HPOID -d DiseaseID -C 20 -m $similarity_measure -o disease_clusters
@@ -8,14 +8,19 @@ generate_clusters){
 	source ~soft_bio_267/initializes/init_netanalyzer
 	export PATH=~soft_bio_267/programs/x86_64/scripts:$PATH
 	export PATH=/mnt/scratch/users/bio_267_uma/elenarojano/projects/angiogenesis_raquel/disease_clustering/scripts:$PATH
+	LAYERS='gene,[A-Za-z0-9]'
 	awk '{ if ($3 >= $combined_score) print $0}' $string_network | tail -n +2 > filtered_string.txt
 	plot_density.R -d filtered_string.txt -X combined_score -o combined_score_dist
 	?
 	clusterORPHA_to_clusterGEN.rb -i cohort_analysis)/temp/"$similarity_measure"_clusters.txt -t $disease_gene_file -o raw_clustered_genes.txt -m $min_group -F $gene_filter
-	group_interactors.rb -i filtered_string.txt -c raw_clustered_genes.txt -o expanded_clustered_genes.txt -n $active_interactors
+	NetAnalyzer.rb -T [cpu] -i filtered_string.txt -l $LAYERS -G raw_clustered_genes.txt -x sht_path -M
+	tail -n +2 group_metrics.txt | sort -k3 -n | grep -v 'NULL' | cut -f 1 | sed -e '1i\group' > connected_clusters.txt
+	#grep -v 'NULL' group_metrics.txt | cut -f 1 > connected_clusters.txt
+	grep -w -F -f connected_clusters.txt raw_clustered_genes.txt > connected_raw_clusters.txt
+	grep -w -F -f connected_clusters.txt expand_clusters.txt > connected_expand_clusters.txt
 }
 
-analyze_clusters_[raw_clustered_genes.txt;expanded_clustered_genes.txt]){
+analyze_clusters_[connected_raw_clusters.txt;connected_expand_clusters.txt]){
 	source ~soft_bio_267/initializes/init_anaconda
 	source ~soft_bio_267/initializes/init_netanalyzer
 	source ~soft_bio_267/initializes/init_degenes_hunter
@@ -28,5 +33,5 @@ analyze_clusters_[raw_clustered_genes.txt;expanded_clustered_genes.txt]){
 	sed  -i "1i group\tcomparative_degree\tavg_sht_path" group_metrics_sorted.txt
 	cdlib_clusterize.py -i generate_clusters)/filtered_string.txt -m external -g -E cluster_metrics.txt -e generate_clusters)/(*)	
 	aggregate_column_data.rb -i generate_clusters)/(*) -x 0 -a 1 > genes_by_cluster.txt
-	clusters_to_enrichment.R -i genes_by_cluster.txt -w 1 -F -k "SYMBOL" -p 0.05 -o aRD_gene_clusters
+	clusters_to_enrichment.R -i genes_by_cluster.txt -w 1 -F -k "SYMBOL" -p 0.01 -o aRD_gene_clusters
 }
