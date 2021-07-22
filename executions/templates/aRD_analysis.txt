@@ -14,10 +14,15 @@ generate_clusters){
 	?
 	clusterORPHA_to_clusterGEN.rb -i cohort_analysis)/temp/"$similarity_measure"_clusters.txt -t $disease_gene_file -o raw_clustered_genes.txt -m $min_group -F $gene_filter
 	NetAnalyzer.rb -T [cpu] -i filtered_string.txt -l $LAYERS -G raw_clustered_genes.txt -x sht_path -M
-	tail -n +2 group_metrics.txt | sort -k3 -n | grep -v 'NULL' | cut -f 1 | sed -e '1i\group' > connected_clusters.txt
+	sort -k3 -n group_metrics.txt | grep -v -w NULL > filtered_group_metrics.txt
+	cut -f 1 filtered_group_metrics.txt > connected_clusters.txt
 	#grep -v 'NULL' group_metrics.txt | cut -f 1 > connected_clusters.txt
 	grep -w -F -f connected_clusters.txt raw_clustered_genes.txt > connected_raw_clusters.txt
+	combine_files.rb -i filtered_group_metrics.txt -f connected_raw_clusters.txt -o raw_cluster_size_ASP.txt
+	x_y_graph.R -d raw_cluster_size_ASP.txt -x clusterSize -y aspValue -o raw_cluster_size_ASP_dist 
 	grep -w -F -f connected_clusters.txt expand_clusters.txt > connected_expand_clusters.txt
+	combine_files.rb -i filtered_group_metrics.txt -f connected_expand_clusters.txt -o expanded_cluster_size_ASP.txt
+	x_y_graph.R -d expanded_cluster_size_ASP.txt -x clusterSize -y aspValue -o expanded_cluster_size_ASP_dist 
 }
 
 analyze_clusters_[connected_raw_clusters.txt;connected_expand_clusters.txt]){
