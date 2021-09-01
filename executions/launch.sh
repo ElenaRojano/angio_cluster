@@ -11,24 +11,42 @@ export PATH=/mnt/scratch/users/bio_267_uma/elenarojano/projects/angiogenesis_raq
 source ~soft_bio_267/initializes/init_pets
 
 global_path='/mnt/scratch/users/bio_267_uma/elenarojano/projects/angiogenesis_raquel/disease_clustering'
+dataset_path=$global_path'/datasets'
 temp_files=$global_path'/executions/temp_files'
 output_folder=$global_path'/executions/aRD_workflow'
-orpha_codes=$global_path'/datasets/aRD_orpha_codes.txt'
+orpha_codes=$dataset_path'/aRD_orpha_codes.txt' #antiguo: raquel_aRD_orpha_codes.txt
+#orpha_codes='/mnt/home/users/pab_001_uma/pedro/proyectos/angio/results/orpha_codes'
+
+
 
 mkdir $temp_files $output_folder
 
 if [ "$1" == "1" ]; then
-	echo 'Preparing files'
-	#File with Human GeneID codes and STRING IDs (used as dictionary)
+	echo 'Downloading & preparing files'
+
+    ### STRING human file
+	#wget https://stringdb-static.org/download/protein.aliases.v11.5.txt.gz 
+	#gunzip protein.aliases.v11.5.txt.gz 
+	
+	#wget https://stringdb-static.org/download/protein.links.v11.5/9606.protein.links.v11.5.txt.gz
+	#gunzip $global_path'/datasets/9606.protein.links.v11.5.txt.gz'
+	
+	### File with Human GeneID codes and STRING IDs (used as dictionary)
 	#wget ftp://string-db.org/mapping_files/STRING_display_names/human.name_2_string.tsv.gz -O $temp_files"/human.name_2_string.tsv.gz"
     #gunzip $temp_files"/human.name_2_string.tsv.gz"
+
+    ### File with HPO phenotypes
 	#wget http://purl.obolibrary.org/obo/hp/hpoa/genes_to_phenotype.txt -O $temp_files"/genes_to_phenotype.txt"
 	#grep -w -F -f $orpha_codes $temp_files/genes_to_phenotype.txt | cut -f 3,2,9 | sort -u > $temp_files/genes_hpo_orpha.txt
+	
+    ### MONDO File with genes and diseases
 	#wget 'http://purl.obolibrary.org/obo/mondo.obo' -O $global_path'/datasets/mondo.obo'
+	#wget 'https://data.monarchinitiative.org/tsv/all_associations/gene_disease.all.tsv.gz' -O $global_path'/datasets/gene_disease.all.tsv.gz'
+	#gunzip $global_path'/datasets/gene_disease.all.tsv.gz'
+	
 	ontology_file=$global_path'/datasets/mondo.obo'
-	#wget 'https://data.monarchinitiative.org/tsv/all_associations/gene_disease.all.tsv.gz' -O $global_path'/datasets/gene_disease.all.tsv'
-	#gunzip gene_disease.all.tsv.gz
 	mondo_file=$global_path'/datasets/gene_disease.all.tsv'
+
 	parse_genes_hpo_orpha.rb -i $temp_files/genes_hpo_orpha.txt -g $temp_files/orpha_genes.txt -h $temp_files/orpha_hpos.txt 
 	get_orpha_mondo.rb -i $orpha_codes -k Orphanet:[0-9]* -f $ontology_file -o $temp_files/orpha_mondo_codes.txt
 	get_mondo_genes.rb -i $temp_files/orpha_mondo_codes.txt -m $mondo_file -o $temp_files/orpha_mondo_genes.txt
@@ -42,8 +60,7 @@ if [ "$1" == "2" ]; then
 	#trad_cluster_stringtogen.rb -i $string_network -d $temp_files"/human.name_2_string.tsv" -o temp_files/string_transl_network.txt -n temp_files/untranslated_genes.txt 
 	echo 'Launching analysis'
 	gene_filter_values=( 0 )
-	combined_score_filts=( 900 920 )
-	#similarity_measures=( "resnik" "lin" )
+	combined_score_filts=( 900 )
 	similarity_measures=( "lin" )
 	min_groups=( 0 )
 	active_interactors=20
@@ -64,6 +81,8 @@ if [ "$1" == "2" ]; then
 					\\$min_group=$min_group,
 					\\$gene_filter=$gene_filter_value,
 					\\$disease_gene_file=$temp_files/disease_genes.txt,
+					\\$phenotype_annotation=$dataset_path'/phenotype_annotation.tab',
+					\\$orpha_mondo_genes=$temp_files/orpha_mondo_genes.txt,
 					\\$disease_hpo_file=$temp_files/orpha_hpos.txt" | tr -d '[:space:]' `
 					AutoFlow -w templates/aRD_analysis.txt -t '7-00:00:00' -m '100gb' -c 4 -o $output_folder"/"$execution_name -n 'sd' -e -V $var_info $2
 				done

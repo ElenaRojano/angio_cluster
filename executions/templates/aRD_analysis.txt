@@ -6,37 +6,43 @@
 
 generate_clusters){
 	source ~soft_bio_267/initializes/init_netanalyzer
+	source ~soft_bio_267/initializes/init_anaconda
+	source ~soft_bio_267/initializes/init_R
 	export PATH=~soft_bio_267/programs/x86_64/scripts:$PATH
-	export PATH=/mnt/scratch/users/bio_267_uma/elenarojano/projects/angiogenesis_raquel/disease_clustering/scripts:$PATH
-	LAYERS='gene,[A-Za-z0-9]'
+	export PATH=/mnt/scratch/users/bio_267_uma/elenarojano/projects/angiogenesis_raquel/disease_clustering/scripts:$PATH	
 	awk '{ if ($3 >= $combined_score) print $0}' $string_network | tail -n +2 > filtered_string.txt
 	plot_density.R -d filtered_string.txt -X combined_score -o combined_score_dist
 	?
 	clusterORPHA_to_clusterGEN.rb -i cohort_analysis)/temp/"$similarity_measure"_clusters.txt -t $disease_gene_file -o raw_clustered_genes.txt -m $min_group -F $gene_filter
-	NetAnalyzer.rb -T [cpu] -i filtered_string.txt -l $LAYERS -G raw_clustered_genes.txt -x sht_path -M
-	sort -k3 -n group_metrics.txt | grep -v -w NULL > filtered_group_metrics.txt
-	cut -f 1 filtered_group_metrics.txt > connected_clusters.txt
-	#grep -v 'NULL' group_metrics.txt | cut -f 1 > connected_clusters.txt
-	grep -w -F -f connected_clusters.txt raw_clustered_genes.txt > connected_raw_clusters.txt
-	combine_files.rb -i filtered_group_metrics.txt -f connected_raw_clusters.txt -o raw_cluster_size_ASP.txt
-	x_y_graph.R -d raw_cluster_size_ASP.txt -x clusterSize -y aspValue -o raw_cluster_size_ASP_dist 
-	grep -w -F -f connected_clusters.txt expand_clusters.txt > connected_expand_clusters.txt
-	combine_files.rb -i filtered_group_metrics.txt -f connected_expand_clusters.txt -o expanded_cluster_size_ASP.txt
-	x_y_graph.R -d expanded_cluster_size_ASP.txt -x clusterSize -y aspValue -o expanded_cluster_size_ASP_dist 
+	netXshtPath.py -i filtered_string.txt -e raw_clustered_genes.txt -g -E stats_by_cluster.txt -o expanded_clusters | grep 'node id' > missing_genes.txt
+	#Clusters selection:
+	#sort -k2 -n stats_by_cluster.txt | grep -v -w None | awk '{ if ($2 <= 2.5) print $0 }' > filtered_stats_by_cluster.txt
+	sort -k2 -n stats_by_cluster.txt | grep -v -w None > filtered_stats_by_cluster.txt
+	cut -f 1 filtered_stats_by_cluster.txt > connected_clusters.txt
+	grep -w -F -f connected_clusters.txt raw_clustered_genes.txt > connected_raw_clusters
+	grep -w -F -f connected_clusters.txt expanded_clusters > connected_expand_clusters
+	#Scatterplots:
+	combine_files.rb -i filtered_stats_by_cluster.txt -f connected_raw_clusters -g $disease_gene_file -d cohort_analysis)/temp/"$similarity_measure"_clusters.txt -o raw_cluster_size_ASP.txt
+	#disPerClust => diseases_per_cluster (cuantas enf. del cluster presentan al menos 1 gen asociado)
+	#clusterSize => genes per cluster
+	x_y_graph.R -d raw_cluster_size_ASP.txt -x clusterSize -y aspValue -z diseasePerCluster -X clusterSize -Y aspValue -Z diseasePerCluster -o raw_cluster_size_ASP_dist 
+	combine_files.rb -i filtered_stats_by_cluster.txt -f connected_expand_clusters -g $disease_gene_file -d cohort_analysis)/temp/"$similarity_measure"_clusters.txt -o expanded_cluster_size_ASP.txt
+	x_y_graph.R -d expanded_cluster_size_ASP.txt -x clusterSize -y aspValue -z diseasePerCluster -X clusterSize -Y aspValue -Z diseasePerCluster -o expanded_cluster_size_ASP_dist 
+	parse_table_info.rb -i $orpha_mondo_genes -f $disease_hpo_file -c cohort_analysis)/temp/lin_clusters.txt -d $phenotype_annotation -o full_info_table.txt
 }
 
-analyze_clusters_[connected_raw_clusters.txt;connected_expand_clusters.txt]){
+#add two more categories: low and high connectivity to the next node:
+
+analyze_clusters_[connected_raw_clusters;connected_expand_clusters]){
 	source ~soft_bio_267/initializes/init_anaconda
 	source ~soft_bio_267/initializes/init_netanalyzer
 	source ~soft_bio_267/initializes/init_degenes_hunter
 	export PATH=~soft_bio_267/programs/x86_64/scripts:$PATH
 	export PATH=/mnt/scratch/users/bio_267_uma/elenarojano/projects/angiogenesis_raquel/disease_clustering/scripts:$PATH
-	LAYERS='gene,[A-Za-z0-9]'
 	?
-	NetAnalyzer.rb -i generate_clusters)/filtered_string.txt -l $LAYERS -G generate_clusters)/(*) -M -o assoc.txt
-	tail -n +2 group_metrics.txt | sort -k 3 > group_metrics_sorted.txt
-	sed  -i "1i group\tcomparative_degree\tavg_sht_path" group_metrics_sorted.txt
 	cdlib_clusterize.py -i generate_clusters)/filtered_string.txt -m external -g -E cluster_metrics.txt -e generate_clusters)/(*)	
+	tail -n +2 cluster_metrics.txt | cut -f 1,14 | sort -k 2 > cluster_metrics.txt
+	sed  -i "1i group\tavg_sht_path" cluster_metrics_sorted.txt
 	aggregate_column_data.rb -i generate_clusters)/(*) -x 0 -a 1 > genes_by_cluster.txt
-	clusters_to_enrichment.R -i genes_by_cluster.txt -w 1 -F -k "SYMBOL" -p 0.01 -o aRD_gene_clusters
+	clusters_to_enrichment.R -i genes_by_cluster.txt -w 1 -k "SYMBOL" -p 0.01 -c -o aRD_gene_clusters #-F
 }
