@@ -10,7 +10,7 @@ generate_clusters){
 	source ~soft_bio_267/initializes/init_R
 	export PATH=~soft_bio_267/programs/x86_64/scripts:$PATH
 	export PATH=/mnt/scratch/users/bio_267_uma/elenarojano/projects/angiogenesis_raquel/disease_clustering/scripts:$PATH	
-	awk '{ if ($3 >= $combined_score) print $0}' $string_network | tail -n +2 > filtered_string.txt
+	awk '{ if ($3 >= $combined_score) print $1 "\t" $2 "\t" 1000 - $3}' $string_network | tail -n +2 > filtered_string.txt
 	plot_density.R -d filtered_string.txt -X combined_score -o combined_score_dist
 	?
 	clusterORPHA_to_clusterGEN.rb -i cohort_analysis)/temp/"$similarity_measure"_clusters.txt -t $disease_gene_file -o raw_clustered_genes.txt -m $min_group -F $gene_filter
@@ -33,7 +33,7 @@ generate_clusters){
 
 #add two more categories: low and high connectivity to the next node:
 
-analyze_clusters_[connected_raw_clusters;connected_expand_clusters]){
+analyze_clusters_[%connected_raw_clusters;connected_expand_clusters]){
 	source ~soft_bio_267/initializes/init_anaconda
 	source ~soft_bio_267/initializes/init_netanalyzer
 	source ~soft_bio_267/initializes/init_degenes_hunter
