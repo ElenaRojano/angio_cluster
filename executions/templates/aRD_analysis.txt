@@ -4,12 +4,12 @@
 	coPatReporter.rb -i $disease_hpo_file -p HPOID -d DiseaseID -C 20 -m $similarity_measure -o disease_clusters
 }
 
-generate_clusters){
+%generate_clusters){
 	source ~soft_bio_267/initializes/init_netanalyzer
 	source ~soft_bio_267/initializes/init_anaconda
 	source ~soft_bio_267/initializes/init_R
 	export PATH=~soft_bio_267/programs/x86_64/scripts:$PATH
-	export PATH=/mnt/scratch/users/bio_267_uma/elenarojano/projects/angiogenesis_raquel/disease_clustering/scripts:$PATH	
+	export PATH=$scripts_path:$PATH	
 	awk '{ if ($3 >= $combined_score) print $1 "\t" $2 "\t" 1000 - $3}' $string_network | tail -n +2 > filtered_string.txt
 	plot_density.R -d filtered_string.txt -X combined_score -o combined_score_dist
 	?
@@ -29,20 +29,43 @@ generate_clusters){
 	combine_files.rb -i filtered_stats_by_cluster.txt -f connected_expand_clusters -g $disease_gene_file -d cohort_analysis)/temp/"$similarity_measure"_clusters.txt -o expanded_cluster_size_ASP.txt
 	x_y_graph.R -d expanded_cluster_size_ASP.txt -x clusterSize -y aspValue -z diseasePerCluster -X clusterSize -Y aspValue -Z diseasePerCluster -o expanded_cluster_size_ASP_dist 
 	parse_table_info.rb -i $orpha_mondo_genes -f $disease_hpo_file -c cohort_analysis)/temp/lin_clusters.txt -d $phenotype_annotation -o full_info_table.txt
+	cut -d ' ' missing_genes.txt -f 1,6 | tr ' ' '\t' > missing_genes_table.txt
 }
 
-#add two more categories: low and high connectivity to the next node:
+prioritize_clusters_[raw_clustered_genes.txt;expanded_clusters]){
+	. ~soft_bio_267/initializes/init_crank
+	mkdir temp
+	ln -s generate_clusters)/(*) clusters
+	cut -f 2 clusters > temp/cl_genes
+	cut -f 1,2 generate_clusters)/filtered_string.txt | tr "\t" "\n" | sort -u | cat - temp/cl_genes | sort -u | awk '{print $1 "\t" NR}' > temp/gene_index
+	cut -f 1,2 generate_clusters)/filtered_string.txt > temp/crank_string.txt
+	standard_name_replacer.rb -i temp/crank_string.txt -I temp/gene_index -c 1,2
+	cut -f 1 generate_clusters)/missing_genes_table.txt > temp/missing_genes
+	grep -v -F -w -f temp/missing_genes clusters > temp/clusters
+	standard_name_replacer.rb -i temp/clusters -I temp/gene_index -c 2
+	aggregate_column_data.rb -i temp/clusters_rep -x 0 -a 1 | tr '\t' ' ' | tr ',' ' ' > temp/clusters_AGG.txt
+	?
+	crank -i:temp/crank_string.txt_rep -c:temp/clusters_AGG.txt -o:crank_metrics.txt
+}
 
-analyze_clusters_[%connected_raw_clusters;connected_expand_clusters]){
+%analyze_clusters_[connected_raw_clusters;connected_expand_clusters]){
 	source ~soft_bio_267/initializes/init_anaconda
 	source ~soft_bio_267/initializes/init_netanalyzer
 	source ~soft_bio_267/initializes/init_degenes_hunter
 	export PATH=~soft_bio_267/programs/x86_64/scripts:$PATH
-	export PATH=/mnt/scratch/users/bio_267_uma/elenarojano/projects/angiogenesis_raquel/disease_clustering/scripts:$PATH
+	export PATH=$scripts_path:$PATH
 	?
 	cdlib_clusterize.py -i generate_clusters)/filtered_string.txt -m external -g -E cluster_metrics.txt -e generate_clusters)/(*)	
 	tail -n +2 cluster_metrics.txt | cut -f 1,14 | sort -k 2 > cluster_metrics.txt
-	sed  -i "1i group\tavg_sht_path" cluster_metrics_sorted.txt
+	sed  -i "1i group\tavg_sht_path" cluster_metrics.txt
 	aggregate_column_data.rb -i generate_clusters)/(*) -x 0 -a 1 > genes_by_cluster.txt
 	clusters_to_enrichment.R -i genes_by_cluster.txt -w 1 -k "SYMBOL" -p 0.01 -c -o aRD_gene_clusters #-F
+}
+
+report_data){
+	?
+	paste !prioritize_clusters_!/crank_metrics.txt > metric_table
+	echo -e '\traw\texpanded' > canvas_table
+	echo -e 'Connect\t1\t1' >> canvas_table
+	cut -f 1,2,7 metric_table | tail -n +2 >> canvas_table
 }
