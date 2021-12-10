@@ -37,7 +37,7 @@ if [ "$1" == "1" ]; then
 
     ### File with HPO phenotypes
 	wget http://purl.obolibrary.org/obo/hp/hpoa/genes_to_phenotype.txt -O $temp_files"/genes_to_phenotype.txt"
-	wget http://purl.obolibrary.org/obo/hp/hpoa/phenotype_annotation.tab -O $dataset_path'/phenotype_annotation.tab' # This is a old resource, check if genes_to_phenotype.txt can be used
+	wget http://purl.obolibrary.org/obo/hp/hpoa/phenotype_annotation.tab -O $dataset_path'/phenotype_annotation.tab' # This is a old resource, is only used to obtain disease names
 	
     ### MONDO File with genes and diseases
 	wget 'http://purl.obolibrary.org/obo/mondo.obo' -O $dataset_path'/mondo.obo'
@@ -52,12 +52,12 @@ if [ "$1" == "1b" ]; then
 	mondo_file=$dataset_path'/gene_disease.all.tsv'
 	string_network=$dataset_path'/string_data.txt'
 
-	grep -w -F -f $orpha_codes $temp_files/genes_to_phenotype.txt | cut -f 3,2,9 | sort -u > $temp_files/genes_hpo_orpha.txt
+	grep -w -F -f $orpha_codes $temp_files/genes_to_phenotype.txt | cut -f 3,2,9 | sort -u > $temp_files/genes_hpo_disease.txt
 	trad_cluster_stringtogen.rb -i $string_network -d $temp_files"/human.name_2_string.tsv" -o temp_files/string_transl_network.txt -n temp_files/untranslated_genes.txt 
-	parse_genes_hpo_orpha.rb -i $temp_files/genes_hpo_orpha.txt -g $temp_files/orpha_genes.txt -h $temp_files/orpha_hpos.txt 
-	get_orpha_mondo.rb -i $orpha_codes -k Orphanet:[0-9]* -f $ontology_file -o $temp_files/orpha_mondo_codes.txt
-	get_mondo_genes.rb -i $temp_files/orpha_mondo_codes.txt -m $mondo_file -o $temp_files/orpha_mondo_genes.txt
-	cut -f 1,3 $temp_files/orpha_mondo_genes.txt > $temp_files/disease_genes.txt
+	parse_genes_hpo_disease.rb -i $temp_files/genes_hpo_disease.txt -g $temp_files/disease_genes.txt -h $temp_files/disease_hpos.txt 
+	get_disease_mondo.rb -i $orpha_codes -k 'Orphanet:[0-9]*|OMIM:[0-9]*' -f $ontology_file -o $temp_files/disease_mondo_codes.txt
+	get_mondo_genes.rb -i $temp_files/disease_mondo_codes.txt -m $mondo_file -o $temp_files/disease_mondo_genes.txt
+	cut -f 1,3 $temp_files/disease_mondo_genes.txt > $temp_files/disease_genes.txt
 fi
 
 
@@ -68,7 +68,6 @@ if [ "$1" == "2" ]; then
 	combined_score_filts=( 900 )
 	similarity_measures=( "lin" )
 	min_groups=( 0 )
-	active_interactors=20
 	for similarity_measure in "${similarity_measures[@]}"
 	do	
 		for min_group in "${min_groups[@]}"
@@ -82,13 +81,12 @@ if [ "$1" == "2" ]; then
 					\\$string_network=$temp_files/string_transl_network.txt,
 					\\$string_dict=$temp_files/human.name_2_string.tsv,
 					\\$combined_score=$combined_score,
-					\\$active_interactors=$active_interactors,
 					\\$min_group=$min_group,
 					\\$gene_filter=$gene_filter_value,
 					\\$disease_gene_file=$temp_files/disease_genes.txt,
 					\\$phenotype_annotation=$dataset_path'/phenotype_annotation.tab',
-					\\$orpha_mondo_genes=$temp_files/orpha_mondo_genes.txt,
-					\\$disease_hpo_file=$temp_files/orpha_hpos.txt,
+					\\$disease_mondo_genes=$temp_files/disease_mondo_genes.txt,
+					\\$disease_hpo_file=$temp_files/disease_hpos.txt,
 					\\$scripts_path=$scripts_path" | tr -d '[:space:]' `
 					AutoFlow -w templates/aRD_analysis.txt -t '7-00:00:00' -m '100gb' -c 4 -o $output_folder"/"$execution_name -n 'sd' -e -V $var_info $2
 				done
