@@ -1,32 +1,25 @@
-%cohort_analysis){
+cohort_analysis){
 	source ~soft_bio_267/initializes/init_pets
 	?
 	coPatReporter.rb -i $disease_hpo_file -p HPOID -d DiseaseID -C 20 -m $similarity_measure -o disease_clusters
 }
 
-%generate_clusters){
+generate_clusters){
 	source ~soft_bio_267/initializes/init_netanalyzer
 	source ~soft_bio_267/initializes/init_anaconda
-	source ~soft_bio_267/initializes/init_R
-	export PATH=~soft_bio_267/programs/x86_64/scripts:$PATH
 	export PATH=$scripts_path:$PATH	
-	awk '{ if ($3 >= $combined_score) print $1 "\t" $2 "\t" 1000 - $3}' $string_network | tail -n +2 > filtered_string.txt
-	plot_density.R -d filtered_string.txt -X combined_score -o combined_score_dist
+	awk '{ if ($3 >= $combined_score) print $1 "\t" $2 "\t" 1000 - $3}' $string_network | tail -n +2 > string_sure_conn.txt
+	LAYERS='gene,[A-Za-z0-9]'
+	NetAnalyzer.rb -i string_sure_conn.txt -l $LAYERS -A 'get_degree,get_degreeZ' -o out
+	awk '{ if ($2 >= 2.5) print $1 }' node_attributes.txt > hub_nodes
+	grep -v -w -F -f hub_nodes string_sure_conn.txt > filtered_string.txt
 	?
-	clusterORPHA_to_clusterGEN.rb -i cohort_analysis)/temp/"$similarity_measure"_clusters.txt -t $disease_gene_file -o raw_clustered_genes.txt -m $min_group -F $gene_filter
+	clusterORPHA_to_clusterGEN.rb -i cohort_analysis)/temp/"$similarity_measure"_clusters.txt -t $disease_gene_file -o raw_clustered_genes.txt -m $min_group -F $gene_filter0
 	netXshtPath.py -i filtered_string.txt -e raw_clustered_genes.txt -g -E stats_by_cluster.txt -o expanded_clusters | grep 'node id' > missing_genes.txt
 	sort -k2 -n stats_by_cluster.txt | grep -v -w None > filtered_stats_by_cluster.txt
 	cut -f 1 filtered_stats_by_cluster.txt > connected_clusters.txt
 	grep -w -F -f connected_clusters.txt raw_clustered_genes.txt > connected_raw_clusters
 	grep -w -F -f connected_clusters.txt expanded_clusters > connected_expand_clusters
-	#Scatterplots:
-	combine_files.rb -i filtered_stats_by_cluster.txt -f connected_raw_clusters -g $disease_gene_file -d cohort_analysis)/temp/"$similarity_measure"_clusters.txt -o raw_cluster_size_ASP.txt
-	#disPerClust => diseases_per_cluster (cuantas enf. del cluster presentan al menos 1 gen asociado)
-	#clusterSize => genes per cluster
-	x_y_graph.R -d raw_cluster_size_ASP.txt -x clusterSize -y aspValue -z diseasePerCluster -X clusterSize -Y aspValue -Z diseasePerCluster -o raw_cluster_size_ASP_dist 
-	combine_files.rb -i filtered_stats_by_cluster.txt -f connected_expand_clusters -g $disease_gene_file -d cohort_analysis)/temp/"$similarity_measure"_clusters.txt -o expanded_cluster_size_ASP.txt
-	x_y_graph.R -d expanded_cluster_size_ASP.txt -x clusterSize -y aspValue -z diseasePerCluster -X clusterSize -Y aspValue -Z diseasePerCluster -o expanded_cluster_size_ASP_dist 
-	parse_table_info.rb -i $orpha_mondo_genes -f $disease_hpo_file -c cohort_analysis)/temp/"$similarity_measure"_clusters.txt -d $phenotype_annotation -o full_info_table.txt
 	cut -d ' ' missing_genes.txt -f 1,6 | tr ' ' '\t' > missing_genes_table.txt
 }
 
@@ -60,6 +53,19 @@ prioritize_clusters_[raw_clustered_genes.txt;expanded_clusters]){
 }
 
 report_data){
+	source ~soft_bio_267/initializes/init_R
+	export PATH=$scripts_path:$PATH	
+	plot_density.R -d generate_clusters)/filtered_string.txt -x V3 -X combined_score -o combined_score_dist -H
+	plot_density.R -d generate_clusters)/node_attributes.txt -x V3 -X Degree -o degree -H
+	plot_density.R -d generate_clusters)/gene_stats.txt -x freq -X 'Number of ocurrences' -o gene_stats
+	#Scatterplots:
+	combine_files.rb -i generate_clusters)/filtered_stats_by_cluster.txt -f generate_clusters)/connected_raw_clusters -g $disease_gene_file -d cohort_analysis)/temp/"$similarity_measure"_clusters.txt -o raw_cluster_size_ASP.txt
+	#disPerClust => diseases_per_cluster (cuantas enf. del cluster presentan al menos 1 gen asociado)
+	#clusterSize => genes per cluster
+	x_y_graph.R -d raw_cluster_size_ASP.txt -x clusterSize -y aspValue -z diseasePerCluster -X clusterSize -Y aspValue -Z diseasePerCluster -o raw_cluster_size_ASP_dist 
+	combine_files.rb -i generate_clusters)/filtered_stats_by_cluster.txt -f generate_clusters)/connected_expand_clusters -g $disease_gene_file -d cohort_analysis)/temp/"$similarity_measure"_clusters.txt -o expanded_cluster_size_ASP.txt
+	x_y_graph.R -d expanded_cluster_size_ASP.txt -x clusterSize -y aspValue -z diseasePerCluster -X clusterSize -Y aspValue -Z diseasePerCluster -o expanded_cluster_size_ASP_dist 
+	parse_table_info.rb -i $disease_mondo_genes -f $disease_hpo_file -c cohort_analysis)/temp/"$similarity_measure"_clusters.txt -d $phenotype_annotation -o full_info_table.txt
 	?
 	paste !prioritize_clusters_!/crank_metrics.txt > metric_table
 	echo -e '\traw\texpanded' > canvas_table

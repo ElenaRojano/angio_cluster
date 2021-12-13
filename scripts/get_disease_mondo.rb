@@ -7,20 +7,27 @@ require 'semtools'
 ## METHODS
 ##############
 
-def load_file(file)
+def load_file(file, sense)
   codes = []
   File.open(file).each do |line|
     line.chomp!
+    line = line.to_sym if sense == :byTerm
     codes << line
   end
   return codes
 end
 
-def translate_terms(ontology, codes, output_file)
+def translate_terms(ontology, codes, output_file, sense)
 	File.open(output_file, 'w') do |f|
-    codes.each do |code| 
-      mondo_code = ontology.dicts[:diseaseIDs][:byValue][code.gsub("ORPHA", "Orphanet")]
-  	  f.puts [code, mondo_code.first].join("\t") unless mondo_code.nil?
+    codes.each do |code|
+      if sense == :byValue
+        q_code = code.gsub("ORPHA", "Orphanet")
+        mondo_code = ontology.dicts[:diseaseIDs][sense][q_code]
+  	    f.puts [code, mondo_code.first].join("\t") unless mondo_code.nil?
+      else
+        mondo_code = ontology.dicts[:diseaseIDs][sense][code]
+        f.puts [code, mondo_code.first].join("\t") unless mondo_code.nil? 
+      end
   	end
   end
 end	
@@ -47,6 +54,11 @@ OptionParser.new do |opts|
     options[:keyword] = item
   end		
 
+  options[:value] = true
+  opts.on("-s", "--sense", "If set, dictionaries are set to 'byTerm'") do
+    options[:value] = false
+  end   
+
   options[:output_file] = 'output.txt'
   opts.on("-o", "--output_file PATH", "Output file") do |item|
     options[:output_file] = item
@@ -58,6 +70,7 @@ end.parse!
 ## MAIN
 ##############
 onto = Ontology.new(file: options[:ontology_file], load_file: true)
-codes = load_file(options[:input_file])
+sense = options[:value] ? :byValue : :byTerm
+codes = load_file(options[:input_file], sense)
 onto.calc_dictionary(:xref, select_regex: /(#{options[:keyword]})/, store_tag: :diseaseIDs, multiterm: true, substitute_alternatives: false)
-translate_terms(onto, codes, options[:output_file])
+translate_terms(onto, codes, options[:output_file], sense)

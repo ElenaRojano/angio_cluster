@@ -43,11 +43,13 @@ end
 
 def apply_filters(cluster_genes, filter, min_groups_per_gene)
 	saved_genes = {}
+	general_stats = Hash.new(0)
 	cluster_genes.each do |cluster, genes_by_disease|
 		stats = Hash.new(0)
 		genes_by_disease.each do |gene_group|
 			gene_group.each do |gene| 
 				stats[gene] += 1
+				general_stats[gene] += 1
 			end 
 		end
 		filtered_genes = []
@@ -57,7 +59,7 @@ def apply_filters(cluster_genes, filter, min_groups_per_gene)
 		end
 		saved_genes[cluster] = filtered_genes
 	end
-	return saved_genes
+	return saved_genes, general_stats
 end
 
 
@@ -107,7 +109,14 @@ end.parse!
 
 disease_clusters = load_disease_clusters(options[:input_file])
 cluster_genes = get_cluster_genes(options[:orpha_genes], disease_clusters)
-saved_genes = apply_filters(cluster_genes, options[:filter_value], options[:min_groups])
+saved_genes, gene_stats = apply_filters(cluster_genes, options[:filter_value], options[:min_groups])
+
+File.open(File.join(File.dirname(options[:output_file]), 'gene_stats.txt'), 'w') do |f|
+	f.puts "gene\tfreq"
+	gene_stats.each do |gene, number|
+		f.puts "#{gene}\t#{number}"
+	end
+end
 
 File.open(options[:output_file], 'w') do |f|
 	final_genes = []

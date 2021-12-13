@@ -44,9 +44,10 @@ if (opt$output_format == "pdf"){
 	jpeg(paste(opt$output, '.jpeg', sep=""))
 }	
 	ggplot(data=data, aes(x=data[[opt$x_values]], y=data[[opt$y_values]]))  +
-	geom_point(aes(size=data[[opt$z_values]])) +
+	geom_point(aes(size=data[[opt$z_values]]), alpha = 0.3) +
+	geom_text(aes(label=clusterID), hjust=0, vjust=0) +
 	xlab(opt$x_title) +
 	ylab(opt$y_title) +
-	theme(axis.text.x = element_text(angle = 45, hjust = 1)) +
+	theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.title=element_blank()) +
 	guides(fill=guide_legend(title=NULL))
 dev.off()

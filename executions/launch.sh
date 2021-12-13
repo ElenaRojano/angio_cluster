@@ -66,7 +66,7 @@ if [ "$1" == "2" ]; then
 	echo 'Launching analysis'
 	gene_filter_values=( 0 )
 	combined_score_filts=( 900 )
-	similarity_measures=( "lin" )
+	similarity_measures=( 'lin' 'resnik' 'jiang_conrath' )
 	min_groups=( 0 )
 	for similarity_measure in "${similarity_measures[@]}"
 	do	
