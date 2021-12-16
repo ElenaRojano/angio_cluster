@@ -36,7 +36,7 @@ if [ "$1" == "1" ]; then
     gunzip $temp_files"/human.name_2_string.tsv.gz"
 
     ### File with HPO phenotypes
-	wget http://purl.obolibrary.org/obo/hp/hpoa/genes_to_phenotype.txt -O $temp_files"/genes_to_phenotype.txt"
+	####wget http://purl.obolibrary.org/obo/hp/hpoa/genes_to_phenotype.txt -O $temp_files"/genes_to_phenotype.txt"
 	wget http://purl.obolibrary.org/obo/hp/hpoa/phenotype.hpoa -O $temp_files'/phenotype.hpoa'
 	
     ### MONDO File with genes and diseases
@@ -49,18 +49,19 @@ if [ "$1" == "1b" ]; then
 	echo 'preparing files'
 	
 	ontology_file=$dataset_path'/mondo.obo'
-	mondo_file=$dataset_path'/gene_disease.all.tsv'
+	monarch_gene_disease=$dataset_path'/gene_disease.all.tsv'
 	string_network=$dataset_path'/string_data.txt'
 
 	grep -v '#' $temp_files/phenotype.hpoa | grep -v -w 'NOT' | cut -f 1,2,4 > $temp_files/dis_name_phen.txt
 	echo -e "DiseaseID\tHPOID" > $temp_files/disease_hpos.txt
 	grep -w -F -f $orpha_codes $temp_files/dis_name_phen.txt | cut -f 1,3 | sort -u | aggregate_column_data.rb -i - -s '|' -x 0 -a 1 >> $temp_files/disease_hpos.txt
-	grep -w -F -f $orpha_codes $temp_files/genes_to_phenotype.txt | cut -f 3,2,9 | sort -u > $temp_files/genes_hpo_disease.txt
-	parse_genes_hpo_disease.rb -i $temp_files/genes_hpo_disease.txt -g $temp_files/disease_genes.txt
-	get_disease_mondo.rb -i $orpha_codes -k 'Orphanet:[0-9]*|OMIM:[0-9]*' -f $ontology_file -o $temp_files/disease_mondo_codes.txt
-	get_mondo_genes.rb -i $temp_files/disease_mondo_codes.txt -m $mondo_file -o $temp_files/disease_mondo_genes.txt
+	###grep -w -F -f $orpha_codes $temp_files/genes_to_phenotype.txt | cut -f 3,2,9 | sort -u > $temp_files/genes_hpo_disease.txt
+	###parse_genes_hpo_disease.rb -i $temp_files/genes_hpo_disease.txt -g $temp_files/disease_genes.txt
+	get_lost_xref.rb -i $ontology_file > $temp_files/supp_mondo_orpha.txt
+	get_disease_mondo.rb -i $orpha_codes -k 'Orphanet:[0-9]*|OMIM:[0-9]*' -f $ontology_file -S $temp_files/supp_mondo_orpha.txt -o $temp_files/disease_mondo_codes.txt
+	get_mondo_genes.rb -i $temp_files/disease_mondo_codes.txt -m $monarch_gene_disease -o $temp_files/disease_mondo_genes.txt
 	cut -f 1,3 $temp_files/disease_mondo_genes.txt > $temp_files/disease_genes.txt
-	trad_cluster_stringtogen.rb -i $string_network -d $temp_files"/human.name_2_string.tsv" -o temp_files/string_transl_network.txt -n temp_files/untranslated_genes.txt 
+	#trad_cluster_stringtogen.rb -i $string_network -d $temp_files"/human.name_2_string.tsv" -o temp_files/string_transl_network.txt -n temp_files/untranslated_genes.txt 
 fi
 
 

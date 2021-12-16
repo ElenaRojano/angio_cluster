@@ -30,9 +30,11 @@ end
 def save_file(output_path, info_hash, sep, tag)
 	File.open(output_path, 'w') do |f|
 		f.puts "DiseaseID\t#{tag}"
-		info_hash.each do |disease, hpo_a|
-			hpo = hpo_a.join(sep)
-			f.puts "#{disease}\t#{hpo}\n"
+		info_hash.each do |disease, array|
+			if array.include?('VEGFC')
+				puts disease.inspect, array.inspect, "#{disease}\t#{array.join(sep)}"
+			end 
+			f.puts "#{disease}\t#{array.join(sep)}"
 		end
 	end
 end
