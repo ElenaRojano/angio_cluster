@@ -50,12 +50,12 @@ OptionParser.new do |opts|
 		options[:input_file] = data
 	end
 
-	options[:genes_file] = 'disease_genes.txt'
+	options[:genes_file] = nil
 	opts.on("-g", "--genes_file PATH", "Output disease - GeneID file") do |data|
 		options[:genes_file] = data
 	end
 
-	options[:hpo_file] = 'disease_hpos.txt'
+	options[:hpo_file] = nil
 	opts.on("-h", "--hpo_file PATH", "Output disease - HPOID file") do |data|
 		options[:hpo_file] = data
 	end
@@ -66,5 +66,5 @@ end.parse!
 #################################
 
 disease_genes, disease_hpos = generate_disease_genes_hpos(options[:input_file])
-save_file(options[:genes_file], disease_genes, ',', 'GeneID' )
-save_file(options[:hpo_file], disease_hpos, '|', 'HPOID') 
+save_file(options[:genes_file], disease_genes, ',', 'GeneID' ) if !options[:genes_file].nil?
+save_file(options[:hpo_file], disease_hpos, '|', 'HPOID') if !options[:hpo_file].nil?

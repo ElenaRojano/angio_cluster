@@ -74,12 +74,16 @@ end
 
 def translate_orpha_diseases(orpha_dictionary_file, clusters_orpha_storage)
 	clusters_orpha_transl_storage = {}
-	translated_diseases = {}
-	CSV.read(orpha_dictionary_file, col_sep: "\t").each do |line|
-		next if line.include?('#disease-db')
-		disease_name = line[2]
-		clusters_orpha_transl_storage[line[5]] = disease_name
+	# CSV.read(orpha_dictionary_file, col_sep: "\t").each do |line|
+	# 	next if line.include?('#disease-db')
+	# 	disease_name = line[2]
+	# 	clusters_orpha_transl_storage[line[5]] = disease_name
+	# end
+	File.open(orpha_dictionary_file).each do |line|
+		disease_code, disease_name, hpo_code = line.chomp.split("\t")
+		clusters_orpha_transl_storage[disease_code] = disease_name
 	end
+	translated_diseases = {}
 	clusters_orpha_storage.each do |cluster, diseases|
 		diseases.each do |disease_id|
 			disease_name = clusters_orpha_transl_storage[disease_id]
