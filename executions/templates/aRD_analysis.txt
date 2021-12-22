@@ -11,7 +11,7 @@ generate_clusters){
 	awk '{ if ($3 >= $combined_score) print $1 "\t" $2 "\t" 1000 - $3}' $string_network | tail -n +2 > string_sure_conn.txt
 	LAYERS='gene,[A-Za-z0-9]'
 	NetAnalyzer.rb -i string_sure_conn.txt -l $LAYERS -A 'get_degree,get_degreeZ' -o out
-	awk '{ if ($2 >= 2.5) print $1 }' node_attributes.txt > hub_nodes
+	awk '{ if ($2 >= $hub_zscore) print $1 }' node_attributes.txt > hub_nodes
 	grep -v -w -F -f hub_nodes string_sure_conn.txt > filtered_string.txt
 	?
 	clusterORPHA_to_clusterGEN.rb -i cohort_analysis)/temp/"$similarity_measure"_clusters.txt -t $disease_gene_file -o raw_clustered_genes.txt -m $min_group -F $gene_filter0

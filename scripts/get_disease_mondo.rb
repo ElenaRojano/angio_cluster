@@ -17,19 +17,50 @@ def load_file(file, sense)
   return codes
 end
 
-def translate_terms(ontology, codes, output_file, sense)
-	File.open(output_file, 'w') do |f|
-    codes.each do |code|
-      if sense == :byValue
-        q_code = code.gsub("ORPHA", "Orphanet")
-        mondo_code = ontology.dicts[:diseaseIDs][sense][q_code]
-  	    f.puts [code, mondo_code.first].join("\t") unless mondo_code.nil?
-      else
-        mondo_code = ontology.dicts[:diseaseIDs][sense][code]
-        f.puts [code, mondo_code.first].join("\t") unless mondo_code.nil? 
-      end
-  	end
+def load_supp_dict(file, sense)
+  dict = {}
+  File.open(file).each do |line|
+    m, c = line.chomp.split("\t")
+    if sense == :byTerm
+      load_hash(dict, m.to_sym, c)
+    else
+      load_hash(dict, c, m)
+    end
   end
+  return dict
+end
+
+def load_hash(hash_to_fill, key, val)
+  query = hash_to_fill[key]
+  if query.nil?
+    hash_to_fill[key] = [val]
+  else
+    query << val
+  end
+end
+
+def translate_terms(ontology, codes, sense, supp_dict)
+  recs = []
+  codes.each do |code|
+    if sense == :byValue
+      q_code = code.gsub("ORPHA", "Orphanet")
+      mondo_code = ontology.dicts[:diseaseIDs][sense][q_code]
+      unless mondo_code.nil?
+        mondo_code.each do |mc|
+          recs << [code, mc] 
+        end
+      end
+    else
+      mondo_code = ontology.dicts[:diseaseIDs][sense][code]
+      mondo_code = supp_dict[code] if mondo_code.nil? && !supp_dict.nil?
+      unless mondo_code.nil?
+        mondo_code.each do |mc|
+          recs << [code, mc] 
+        end
+      end
+    end
+	end
+  return recs.uniq
 end	
 
 ##############
@@ -43,6 +74,12 @@ OptionParser.new do |opts|
   opts.on("-i", "--input_file PATH", "List of terms to be translated") do |item|
     options[:input_file] = item
   end
+
+  options[:supp_dict] = nil
+  opts.on("-S", "--supp_dict PATH", "Additional list to perform translations") do |item|
+    options[:supp_dict] = item
+  end
+
 
   options[:ontology_file] = nil
   opts.on("-f", "--ontology_file PATH", "Ontology file used to get the translated terms") do |item|
@@ -71,6 +108,13 @@ end.parse!
 ##############
 onto = Ontology.new(file: options[:ontology_file], load_file: true)
 sense = options[:value] ? :byValue : :byTerm
+supp_dict = nil
+supp_dict = load_supp_dict(options[:supp_dict], sense) if !options[:supp_dict].nil?
 codes = load_file(options[:input_file], sense)
 onto.calc_dictionary(:xref, select_regex: /(#{options[:keyword]})/, store_tag: :diseaseIDs, multiterm: true, substitute_alternatives: false)
-translate_terms(onto, codes, options[:output_file], sense)
+recs = translate_terms(onto, codes, sense, supp_dict)
+File.open(options[:output_file], 'w') do |f|
+  recs.each do |rec|
+   f.puts rec.join("\t") 
+  end
+end
