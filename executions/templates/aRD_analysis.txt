@@ -2,6 +2,11 @@ cohort_analysis){
 	source ~soft_bio_267/initializes/init_pets
 	?
 	coPatReporter.rb -i $disease_hpo_file -p HPOID -d DiseaseID -C 20 -m $similarity_measure -o disease_clusters
+	
+	if [ ! -s disease_clusters.html ]; then 
+		>&2 echo "Cohort analysis has failed"
+		exit 1
+	fi
 }
 
 generate_clusters){
@@ -21,6 +26,11 @@ generate_clusters){
 	grep -w -F -f connected_clusters.txt raw_clustered_genes.txt > connected_raw_clusters
 	grep -w -F -f connected_clusters.txt expanded_clusters > connected_expand_clusters
 	cut -d ' ' missing_genes.txt -f 1,6 | tr ' ' '\t' > missing_genes_table.txt
+	 
+	if [ ! -s raw_clustered_genes.txt ] || [ ! -s expanded_clusters ]; then
+		>&2 echo "Clustering has failed"
+		exit 1
+	fi
 }
 
 prioritize_clusters_[raw_clustered_genes.txt;expanded_clusters]){
@@ -36,9 +46,15 @@ prioritize_clusters_[raw_clustered_genes.txt;expanded_clusters]){
 	aggregate_column_data.rb -i temp/clusters_rep -x 0 -a 1 | tr '\t' ' ' | tr ',' ' ' > temp/clustered_genes_AGG.txt
 	?
 	crank -i:temp/crank_string.txt_rep -c:temp/clustered_genes_AGG.txt -o:crank_metrics.txt
+
+	if [ ! -s crank_metrics.txt ]; then 
+		>&2 echo " Cluster prioritization has failed"
+		exit 1
+	fi
+	
 }
 
-%analyze_clusters_[connected_raw_clusters;connected_expand_clusters]){
+analyze_clusters_[connected_raw_clusters;connected_expand_clusters]){
 	source ~soft_bio_267/initializes/init_anaconda
 	source ~soft_bio_267/initializes/init_netanalyzer
 	source ~soft_bio_267/initializes/init_degenes_hunter
@@ -50,6 +66,10 @@ prioritize_clusters_[raw_clustered_genes.txt;expanded_clusters]){
 	sed  -i "1i group\tavg_sht_path" cluster_metrics.txt
 	aggregate_column_data.rb -i generate_clusters)/(*) -x 0 -a 1 > genes_by_cluster.txt
 	clusters_to_enrichment.R -i genes_by_cluster.txt -w 1 -k "SYMBOL" -p 0.01 -c -o aRD_gene_clusters #-F
+	if [ ! -s cluster_metrics.txt ]; then 
+		>&2 echo "Clusters analysis has failed"
+		exit 1
+	fi
 }
 
 report_data){
