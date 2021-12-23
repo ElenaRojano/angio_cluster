@@ -92,12 +92,16 @@ if [ "$1" == "2" ]; then
 					\\$phenotype_annotation=$temp_files'/dis_name_phen.txt',
 					\\$disease_mondo_genes=$temp_files/disease_mondo_genes.txt,
 					\\$disease_hpo_file=$temp_files/disease_hpos.txt,
+					\\$report_template=$global_path/executions/templates/angio_report.erb,
 					\\$scripts_path=$scripts_path" | tr -d '[:space:]' `
-					AutoFlow -w templates/aRD_analysis.txt -t '7-00:00:00' -m '100gb' -c 4 -o $output_folder"/"$execution_name -n 'sd' -e -V $var_info $2
+					AutoFlow -w templates/aRD_analysis.txt -t '7-00:00:00' -m '100gb' -c 4 -o $output_folder"/"$execution_name -n 'sr' -e -V $var_info $2
 				done
 			done
 		done
 	done
+elif [ "$1" == "2b" ]; then
+	source ~soft_bio_267/initializes/init_autoflow
+	flow_logger -w -e $MAPPING_RESULTS_FOLDER/$sample -r all $2
 fi
 
 
