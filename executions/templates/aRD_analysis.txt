@@ -66,7 +66,7 @@ analyze_clusters_[connected_raw_clusters;connected_expand_clusters]){
 	mv cluster_metrics_tmp.txt cluster_metrics.txt
 	sed  -i "1i group\tavg_sht_path" cluster_metrics.txt
 	aggregate_column_data.rb -i generate_clusters)/(*) -x 0 -a 1 > genes_by_cluster.txt
-	clusters_to_enrichment.R -i genes_by_cluster.txt -w 1 -k "SYMBOL" -p 0.01 -c -o aRD_gene_clusters #-F
+	clusters_to_enrichment.R -i genes_by_cluster.txt -w 1 -k "SYMBOL" -p 0.01 -c -o aRD_gene_clusters -G #-F
 	if [ ! -s cluster_metrics.txt ]; then 
 		>&2 echo "Clusters analysis has failed"
 		exit 1
