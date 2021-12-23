@@ -1,0 +1,55 @@
+<h1 style="text-align:center; background-color:#d6eaf8 ">Angiogenesis related disease report</h1>
+<div style="overflow: hidden">
+	<!--- 
+	<h2 style="text-align:center; background-color:#d6eaf8 ">Clustering overview</h2>
+	 --->
+	<div style="overflow: hidden">
+		<h2 style="text-align:center; background-color:#d6eaf8 ">Average shortest path vs Cluster size</h2>
+
+		<%=
+			embed_pdf("raw_cluster_size_ASP_dist.pdf",'width="800" height="800"')
+
+		%>
+		<%=
+			embed_pdf("expanded_cluster_size_ASP_dist.pdf",'width="800" height="800"')
+		%>
+
+		<h2 style="text-align:center; background-color:#d6eaf8 ">Functional enrichment raw clusters</h2>
+		<div style="width: 100%;">
+				<h3 style="width: 100%;text-align:center; background-color:#d6eaf8 ">Functional enrichment raw clusters in GO: Molecular Functions categories</h3>
+				<%=
+					embed_img("raw_enrichment/emaplot_MF_aRD_gene_clusters.png", 'width="800" height="800"')
+				%>
+				<h3 style="width: 100%;text-align:center; background-color:#d6eaf8 ">Functional enrichment raw clusters in GO: Biological Processes categories</h3>
+				<%=
+					embed_img("raw_enrichment/emaplot_BP_aRD_gene_clusters.png", 'width="800" height="800"')
+				%>
+				<h3 style="width: 100%;text-align:center; background-color:#d6eaf8 ">Functional enrichment raw clusters in GO: Cellular Components</h3>
+				<%=
+					embed_img("raw_enrichment/emaplot_CC_aRD_gene_clusters.png", 'width="800" height="800"')
+				%>
+
+		</div>
+
+
+		<h2 style="text-align:center; background-color:#d6eaf8 ">Functional enrichment expanded clusters</h2>  
+
+
+		<div style="width: 100%;">
+				<h3 style="width: 100%;text-align:center; background-color:#d6eaf8 ">Functional enrichment expanded clusters in GO: Molecular Functions categories</h3>
+				<%=
+					embed_img("expand_enrichment/emaplot_MF_aRD_gene_clusters.png", 'width="800" height="800"')
+				%>	
+				<h3 style="width: 100%;text-align:center; background-color:#d6eaf8 ">Functional enrichment expanded clusters in GO: Biological Processes categories</h3>
+				<%=
+					embed_img("expand_enrichment/emaplot_BP_aRD_gene_clusters.png", 'width="800" height="800"')
+				%>
+		
+				<h3 style="width: 100%;text-align:center; background-color:#d6eaf8 ">Functional enrichment expanded clusters in GO: Cellular Components</h3>
+				<%=
+					embed_img("expand_enrichment/emaplot_CC_aRD_gene_clusters.png", 'width="800" height="800"')
+				%>
+			
+		</div>
+
+
