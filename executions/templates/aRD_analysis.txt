@@ -2,7 +2,7 @@ cohort_analysis){
 	source ~soft_bio_267/initializes/init_pets
 	?
 	coPatReporter.rb -i $disease_hpo_file -p HPOID -d DiseaseID -C 20 -m $similarity_measure -o disease_clusters
-	
+
 	if [ ! -s disease_clusters.html ]; then 
 		>&2 echo "Cohort analysis has failed"
 		exit 1
@@ -26,11 +26,30 @@ generate_clusters){
 	grep -w -F -f connected_clusters.txt raw_clustered_genes.txt > connected_raw_clusters
 	grep -w -F -f connected_clusters.txt expanded_clusters > connected_expand_clusters
 	cut -d ' ' missing_genes.txt -f 1,6 | tr ' ' '\t' > missing_genes_table.txt
-	 
+
 	if [ ! -s raw_clustered_genes.txt ] || [ ! -s expanded_clusters ]; then
 		>&2 echo "Clustering has failed"
 		exit 1
 	fi
+}
+
+clustering_robustness_[1-100]){
+	source ~soft_bio_267/initializes/init_pets
+	count=`wc -l < $disease_hpo_file`
+	records=`echo "tot=$count-1; puts (tot-tot*$robustness_fraction).to_i" | ruby`
+	head -n 1 $disease_hpo_file > sample
+	tail -n +2 $disease_hpo_file | shuf -n $records >> sample
+	?
+	coPatReporter.rb -i sample -p HPOID -d DiseaseID -C 20 -m $similarity_measure -o disease_clusters
+	source ~soft_bio_267/initializes/init_anaconda
+	intersect_columns.rb -a $disease_hpo_file -b cohort_analysis)/temp/"$similarity_measure"_clusters.txt -k a | tail -n +2 | awk '{print $1 "\tnot"}' > ref_clust
+	cat cohort_analysis)/temp/"$similarity_measure"_clusters.txt >> ref_clust
+	intersect_columns.rb -a $disease_hpo_file -b sample -k a | awk '{print $1 "\tdummy"}' > sample_clust
+	intersect_columns.rb -a sample -b temp/"lin"_clusters.txt -k a | tail -n +2 | awk '{print $1 "\tdummy"}' > sample_clust
+	cat temp/"$similarity_measure"_clusters.txt >> sample_clust
+	awk '{print $2 "\t" $1}' ref_clust > ref_clust_sort
+	awk '{print $2 "\t" $1}' sample_clust > sample_clust_sort
+	cdlib_clusterize.py -i generate_clusters)/filtered_string.txt -A ref_clust_sort -B sample_clust_sort > adjusted_mutual_info
 }
 
 prioritize_clusters_[raw_clustered_genes.txt;expanded_clusters]){
@@ -51,7 +70,6 @@ prioritize_clusters_[raw_clustered_genes.txt;expanded_clusters]){
 		>&2 echo " Cluster prioritization has failed"
 		exit 1
 	fi
-	
 }
 
 analyze_clusters_[connected_raw_clusters;connected_expand_clusters]){
@@ -62,11 +80,11 @@ analyze_clusters_[connected_raw_clusters;connected_expand_clusters]){
 	export PATH=$scripts_path:$PATH
 	?
 	cdlib_clusterize.py -i generate_clusters)/filtered_string.txt -m external -g -E cluster_metrics.txt -e generate_clusters)/(*)	
-	tail -n +2 cluster_metrics.txt | cut -f 1,14 | sort -k 2 > cluster_metrics_tmp.txt
-	mv cluster_metrics_tmp.txt cluster_metrics.txt
+	tail -n +2 cluster_metrics.txt | cut -f 1,14 | sort -k 2 > cluster_metrics.txt
 	sed  -i "1i group\tavg_sht_path" cluster_metrics.txt
 	aggregate_column_data.rb -i generate_clusters)/(*) -x 0 -a 1 > genes_by_cluster.txt
-	clusters_to_enrichment.R -i genes_by_cluster.txt -w 1 -k "SYMBOL" -p 0.01 -c -o aRD_gene_clusters -G #-F
+	clusters_to_enrichment.R -i genes_by_cluster.txt -w 1 -k "SYMBOL" -p 0.01 -c -o aRD_gene_clusters #-F
+
 	if [ ! -s cluster_metrics.txt ]; then 
 		>&2 echo "Clusters analysis has failed"
 		exit 1
@@ -75,9 +93,8 @@ analyze_clusters_[connected_raw_clusters;connected_expand_clusters]){
 
 report_data){
 	source ~soft_bio_267/initializes/init_R
-	source ~soft_bio_267/initializes/init_ruby
+	source ~soft_bio_267/initializes/init_report_html
 	export PATH=$scripts_path:$PATH	
-	source ~/software/initializes/init_degenes_hunter
 	plot_density.R -d generate_clusters)/filtered_string.txt -x V3 -X combined_score -o combined_score_dist -H
 	plot_density.R -d generate_clusters)/node_attributes.txt -x V3 -X Degree -o degree -H
 	plot_density.R -d generate_clusters)/gene_stats.txt -x freq -X 'Number of ocurrences' -o gene_stats
@@ -88,16 +105,16 @@ report_data){
 	x_y_graph.R -d raw_cluster_size_ASP.txt -x clusterSize -y aspValue -z diseasePerCluster -X clusterSize -Y aspValue -Z diseasePerCluster -o raw_cluster_size_ASP_dist 
 	combine_files.rb -i generate_clusters)/filtered_stats_by_cluster.txt -f generate_clusters)/connected_expand_clusters -g $disease_gene_file -d cohort_analysis)/temp/"$similarity_measure"_clusters.txt -o expanded_cluster_size_ASP.txt
 	x_y_graph.R -d expanded_cluster_size_ASP.txt -x clusterSize -y aspValue -z diseasePerCluster -X clusterSize -Y aspValue -Z diseasePerCluster -o expanded_cluster_size_ASP_dist 
-	parse_table_info.rb -i $disease_mondo_genes -f $disease_hpo_file -c cohort_analysis)/temp/"$similarity_measure"_clusters.txt -d $phenotype_annotation -o full_info_table.txt
+	merge_tabular.rb !prioritize_clusters_!/crank_metrics.txt > metric_table
+	echo -e '\traw\texpanded' > canvas_table
+	tail -n +2 metric_table |cut -f 1,2,6 | grep -v '-' | sort -r -k 2,2 -n >> canvas_table
 	mkdir raw_enrichment
 	ln -s analyze_clusters_connected_raw_clusters)/aRD_gene_clusters_functional_enrichment/emaplot*.png raw_enrichment/
 	mkdir expand_enrichment
-	ln -s analyze_clusters_connected_expand_clusters)/aRD_gene_clusters_functional_enrichment/emaplot*.png expand_enrichment/
+	ln -s analyze_clusters_connected_expand_clusters)/aRD_gene_clusters_functional_enrichment/emaplot*.png expand_enrichment/	
 	?
-	paste !prioritize_clusters_!/crank_metrics.txt > metric_table
-	report_html -t $report_template -d metric_table -o cluster_report
-
-	echo -e '\traw\texpanded' > canvas_table
-	echo -e 'Connect\t1\t1' >> canvas_table
-	cut -f 1,2,7 metric_table | tail -n +2 >> canvas_table
+	report_html -t $report_template -d canvas_table -o cluster_report
+	parse_table_info.rb -i $disease_mondo_genes -f $disease_hpo_file -c cohort_analysis)/temp/"$similarity_measure"_clusters.txt -d $phenotype_annotation -o full_info_table.txt
+	tail -n +2 full_info_table.txt |awk -F "\t" '{print $2 "\tcl" $3 "\t" $4}' > net_tab
+	table2cyt.rb -i full_info_table.txt -o net -c 0,1,2 -t 'cl,dis,gene'
 }
