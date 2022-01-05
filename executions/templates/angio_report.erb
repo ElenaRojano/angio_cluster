@@ -1,9 +1,18 @@
-<h1 style="text-align:center; background-color:#d6eaf8 ">Angiogenesis related disease report</h1>
+<h1 style="text-align:center; background-color:#d6eaf8 ">Disease report</h1>
 <div style="overflow: hidden">
 	<!--- 
 	<h2 style="text-align:center; background-color:#d6eaf8 ">Clustering overview</h2>
 	 --->
 	<div style="overflow: hidden">
+
+		<h2 style="text-align:center; background-color:#d6eaf8 ">Clustering robustness</h2>
+		<%=
+			embed_img("copat/clustering_heatmap.png", 'width="800" height="800"')
+		%>
+		<%=
+			embed_pdf("adj_mut_inf.pdf", 'width="800" height="800"') if File.exist?("adj_mut_inf.pdf")
+		%>
+
 		<h2 style="text-align:center; background-color:#d6eaf8 ">Average shortest path vs Cluster size</h2>
 
 		<%=
@@ -13,6 +22,15 @@
 		<%=
 			embed_pdf("expanded_cluster_size_ASP_dist.pdf",'width="800" height="800"')
 		%>
+
+		<h2 style="text-align:center; background-color:#d6eaf8 ">Cluster prioritization in STRING network</h2> 
+		<div style="width: 100%;">
+			<%=dotplot(id: 'canvas_table', header: true, row_names: true, 
+						title: 'CRank for gene clusters',
+						x_label: 'CRank',
+						connect: true
+						)%>
+		</div>
 
 		<h2 style="text-align:center; background-color:#d6eaf8 ">Functional enrichment raw clusters</h2>
 		<div style="width: 100%;">
@@ -31,10 +49,7 @@
 
 		</div>
 
-
-		<h2 style="text-align:center; background-color:#d6eaf8 ">Functional enrichment expanded clusters</h2>  
-
-
+		<h2 style="text-align:center; background-color:#d6eaf8 ">Functional enrichment expanded clusters</h2> 
 		<div style="width: 100%;">
 				<h3 style="width: 100%;text-align:center; background-color:#d6eaf8 ">Functional enrichment expanded clusters in GO: Molecular Functions categories</h3>
 				<%=
@@ -52,7 +67,6 @@
 			
 		</div>
 
-		<h2 style="text-align:center; background-color:#d6eaf8 ">Cluster prioritization in STRING network</h2> 
-		<div style="width: 100%;">
-			<%=dotplot(id: 'canvas_table', header: true, row_names: true, connect: true, height: 300)%>
-		</div>
+
+
+
