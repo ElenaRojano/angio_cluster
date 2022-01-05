@@ -88,7 +88,7 @@ report_data){
 	source ~soft_bio_267/initializes/init_R
 	source ~soft_bio_267/initializes/init_report_html
 	export PATH=$scripts_path:$PATH	
-	plot_density.R -d generate_clusters)/filtered_string.txt -x V3 -X combined_score -o combined_score_dist -H
+	plot_density.R -d generate_clusters)/filtered_string.txt -x V3 -X 'STRING combined score' -o combined_score_dist -H
 	plot_density.R -d generate_clusters)/node_attributes.txt -x V3 -X Degree -o degree -H
 	plot_density.R -d generate_clusters)/gene_stats.txt -x freq -X 'Number of ocurrences' -o gene_stats
 	#Scatterplots:
@@ -104,9 +104,9 @@ report_data){
 	echo -e '\traw\texpanded' > canvas_table
 	tail -n +2 metric_table |cut -f 1,2,6 | grep -v '-' | sort -r -k 2,2 -n | awk '{print "cl" $0}' >> canvas_table
 	mkdir raw_enrichment
-	ln -s analyze_clusters_connected_raw_clusters)/aRD_gene_clusters_functional_enrichment/emaplot*.png raw_enrichment/
+	ln -s analyze_clusters_connected_raw_clusters)/aRD_gene_clusters_functional_enrichment/*.png raw_enrichment/
 	mkdir expand_enrichment
-	ln -s analyze_clusters_connected_expand_clusters)/aRD_gene_clusters_functional_enrichment/emaplot*.png expand_enrichment/
+	ln -s analyze_clusters_connected_expand_clusters)/aRD_gene_clusters_functional_enrichment/*.png expand_enrichment/
 	rm -rf copat; mkdir copat
 	ln -s cohort_analysis)/temp/"$similarity_measure"_heatmap.png copat/clustering_heatmap.png
 	?
