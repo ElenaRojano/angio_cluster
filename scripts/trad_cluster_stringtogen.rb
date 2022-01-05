@@ -10,8 +10,8 @@ def load_dictionary(input_file)
 	dictionary = {}
 	File.open(input_file).each do |line|
 		line.chomp!
-		next if line.include?('NCBI')
-		ncbi, genename, string = line.split("\t")
+		next if line =~ /^#/
+		string, genename, protein_size, annotation = line.split("\t")
 		query = dictionary[string]
 		if query.nil?
 			dictionary[string] = genename

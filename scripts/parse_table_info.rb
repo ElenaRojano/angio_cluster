@@ -57,13 +57,14 @@ end
 
 def combine_files(orpha_genes_storage, orpha_hpos_storage, orpha_clusters_storage, clusters_orpha_transl_storage)
 	final_table = {}
-	orpha_codes = orpha_genes_storage.keys
+	orpha_codes = orpha_genes_storage.keys | orpha_hpos_storage.keys 
 	orpha_codes.each do |orpha_code|
 		genes_ary = orpha_genes_storage[orpha_code]
 		hpos_ary = orpha_hpos_storage[orpha_code]
 		cluster_id = orpha_clusters_storage[orpha_code]
 		tranls_dis = clusters_orpha_transl_storage[orpha_code]
-		unless genes_ary.nil? || hpos_ary.nil? || cluster_id.nil?
+		unless hpos_ary.nil? || cluster_id.nil?
+			genes_ary = ['-'] if genes_ary.nil?
 			info_to_add = [tranls_dis, cluster_id, genes_ary.uniq.join(','), hpos_ary.uniq.join(',')]
 			final_table[orpha_code] = info_to_add
 		end

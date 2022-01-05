@@ -96,6 +96,11 @@ OptionParser.new do |opts|
     options[:value] = false
   end   
 
+  options[:get_dict] = false
+  opts.on("-D", "--get_dict", "Export dictionary") do
+    options[:get_dict] = true
+  end   
+
   options[:output_file] = 'output.txt'
   opts.on("-o", "--output_file PATH", "Output file") do |item|
     options[:output_file] = item
@@ -116,5 +121,14 @@ recs = translate_terms(onto, codes, sense, supp_dict)
 File.open(options[:output_file], 'w') do |f|
   recs.each do |rec|
    f.puts rec.join("\t") 
+  end
+end
+if options[:get_dict]
+  File.open('dict.txt', 'w') do |f|
+    onto.dicts[:diseaseIDs][sense].each do | k, vals|
+      vals.each do |v|
+        f.puts "#{k}\t#{v}"
+      end
+    end
   end
 end
