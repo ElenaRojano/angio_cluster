@@ -46,7 +46,7 @@ if (opt$output_format == "pdf"){
 }	
 	ggplot(data=data, aes(x=data[[opt$x_values]], y=data[[opt$y_values]]))  +
 	geom_point(aes(size=data[[opt$z_values]]), alpha = 0.3) +
-	geom_label_repel(fill = "white",aes(label=clusterID, hjust=0, vjust=0), xlim = c(NA, Inf), ylim = c(-Inf, Inf)) +
+	geom_label_repel(fill = "white",aes(label=clusterID), label.size= 0.15, nudge_x=0.6, nudge_y=0.08,xlim = c(NA, Inf), ylim = c(-Inf, Inf)) +
 	xlab(opt$x_title) +
 	ylab(opt$y_title) +
 	theme(axis.text.x = element_text(angle = 45, hjust = 1), legend.title=element_blank()) +
