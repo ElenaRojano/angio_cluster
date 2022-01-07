@@ -7,7 +7,7 @@ N.B. The user must have Ruby, python and R installed.
 
 1: Clone this repository*
 
-        $ git clone git@github.com:ElenaRojano/angio_cluster.git
+        $ git clone git@github.com:ElenaRojano/angio_cluster.git --recurse-submodules
 
 2: Install the workflow manager Autoflow and other required ruby gems throught:
 
