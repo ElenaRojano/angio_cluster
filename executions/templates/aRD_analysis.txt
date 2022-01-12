@@ -9,7 +9,7 @@
 	fi
 }
 
-%generate_clusters){
+generate_clusters){
 	source ~soft_bio_267/initializes/init_netanalyzer
 	source ~soft_bio_267/initializes/init_anaconda
 	export PATH=$scripts_path:$PATH	
@@ -52,7 +52,7 @@
 	cdlib_clusterize.py -i generate_clusters)/filtered_string.txt -A ref_clust_sort -B sample_clust_sort > adjusted_mutual_info
 }
 
-%prioritize_clusters_[raw_clustered_genes.txt;expanded_clusters]){
+prioritize_clusters_[raw_clustered_genes.txt;expanded_clusters]){
 	. ~soft_bio_267/initializes/init_crank
 	mkdir temp
 	cut -f 1 generate_clusters)/missing_genes_table.txt > temp/missing_genes
@@ -72,7 +72,7 @@
 	fi
 }
 
-%analyze_clusters_[connected_raw_clusters;connected_expand_clusters]){
+analyze_clusters_[connected_raw_clusters;connected_expand_clusters]){
 	source ~soft_bio_267/initializes/init_anaconda
 	source ~soft_bio_267/initializes/init_netanalyzer
 	source ~soft_bio_267/initializes/init_degenes_hunter
@@ -114,4 +114,7 @@ report_data){
 	parse_table_info.rb -i $disease_mondo_genes -f $disease_hpo_file -c cohort_analysis)/temp/"$similarity_measure"_clusters.txt -d $phenotype_annotation -o full_info_table.txt
 	tail -n +2 full_info_table.txt | awk -F "\t" '{print "cl" $3 "\t" $2 "\t" $4}' > net_tab
 	table2cyt.rb -i net_tab -o net -c 0,1,2 -t 'cl,dis,gene'
+	aggregate_column_data.rb -i generate_clusters)/raw_clustered_genes.txt -x 0 -a 1 > genes_by_cluster_ALL.txt
+	echo -e "Cluster_id\tASP_value\tAssociated_genes_by_MONDO\tASP_expanded_genes" > cluster_table.txt
+	merge_tabular.rb generate_clusters)/stats_by_cluster.txt genes_by_cluster_ALL.txt analyze_clusters_connected_expand_clusters)/genes_by_cluster.txt | sed 's/None/-/g' >> cluster_table.txt
 }
