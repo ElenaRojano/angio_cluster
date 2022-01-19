@@ -1,4 +1,4 @@
-%cohort_analysis){
+cohort_analysis){
 	source ~soft_bio_267/initializes/init_pets
 	?
 	coPatReporter.rb -i $disease_hpo_file -p HPOID -d DiseaseID -C 20 -m $similarity_measure -o disease_clusters
@@ -25,7 +25,7 @@ generate_clusters){
 	cut -f 1 filtered_stats_by_cluster.txt > connected_clusters.txt
 	grep -w -F -f connected_clusters.txt raw_clustered_genes.txt > connected_raw_clusters
 	grep -w -F -f connected_clusters.txt expanded_clusters > connected_expand_clusters
-	cut -d ' ' missing_genes.txt -f 1,6 | tr ' ' '\t' > missing_genes_table.txt
+	cut -d ' ' missing_genes.txt -f 1,6 | tr ' ' '\t' | aggregate_column_data.rb -i - -x 0 -a 1 > missing_genes_table.txt
 
 	if [ ! -s raw_clustered_genes.txt ] || [ ! -s expanded_clusters ]; then
 		>&2 echo "Clustering has failed"
@@ -33,7 +33,7 @@ generate_clusters){
 	fi
 }
 
-%clustering_robustness_[1-100]){
+clustering_robustness_[1-100]){
 	source ~soft_bio_267/initializes/init_pets
 	count=`wc -l < $disease_hpo_file`
 	records=`echo "tot=$count-1; puts (tot-tot*$robustness_fraction).to_i" | ruby`
@@ -95,9 +95,9 @@ report_data){
 	combine_files.rb -i generate_clusters)/filtered_stats_by_cluster.txt -f generate_clusters)/connected_raw_clusters -g $disease_gene_file -d cohort_analysis)/temp/"$similarity_measure"_clusters.txt -o raw_cluster_size_ASP.txt
 	#disPerClust => diseases_per_cluster (cuantas enf. del cluster presentan al menos 1 gen asociado)
 	#clusterSize => genes per cluster
-	x_y_graph.R -d raw_cluster_size_ASP.txt -x clusterSize -y aspValue -z diseasePerCluster -X clusterSize -Y aspValue -Z diseasePerCluster -o raw_cluster_size_ASP_dist 
+	x_y_graph.R -d raw_cluster_size_ASP.txt -x clusterSize -y aspValue -z diseasePerCluster -X 'Genes by cluster' -Y 'ASP value' -Z '' -o raw_cluster_size_ASP_dist 
 	combine_files.rb -i generate_clusters)/filtered_stats_by_cluster.txt -f generate_clusters)/connected_expand_clusters -g $disease_gene_file -d cohort_analysis)/temp/"$similarity_measure"_clusters.txt -o expanded_cluster_size_ASP.txt
-	x_y_graph.R -d expanded_cluster_size_ASP.txt -x clusterSize -y aspValue -z diseasePerCluster -X clusterSize -Y aspValue -Z diseasePerCluster -o expanded_cluster_size_ASP_dist 
+	x_y_graph.R -d expanded_cluster_size_ASP.txt -x clusterSize -y aspValue -z diseasePerCluster -X 'Genes by cluster' -Y 'ASP value' -Z '' -o expanded_cluster_size_ASP_dist 
 	merge_tabular.rb !prioritize_clusters_!/crank_metrics.txt > metric_table
 	cat !clustering_robustness_!/adjusted_mutual_info > adjusted_mutual_info
 	plot_density.R -d adjusted_mutual_info -x V1 -X 'Adjusted mutual information' -o adj_mut_inf -H
