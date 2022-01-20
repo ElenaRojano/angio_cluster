@@ -52,7 +52,7 @@ clustering_robustness_[1-100]){
 	cdlib_clusterize.py -i generate_clusters)/filtered_string.txt -A ref_clust_sort -B sample_clust_sort > adjusted_mutual_info
 }
 
-prioritize_clusters_[raw_clustered_genes.txt;expanded_clusters]){
+prioritize_clusters_[connected_raw_clusters;connected_expand_clusters]){
 	. ~soft_bio_267/initializes/init_crank
 	mkdir temp
 	cut -f 1 generate_clusters)/missing_genes_table.txt > temp/missing_genes
@@ -117,4 +117,9 @@ report_data){
 	aggregate_column_data.rb -i generate_clusters)/raw_clustered_genes.txt -x 0 -a 1 > genes_by_cluster_ALL.txt
 	echo -e "Cluster_id\tASP_value\tAssociated_genes_by_MONDO\tASP_expanded_genes" > cluster_table.txt
 	merge_tabular.rb generate_clusters)/stats_by_cluster.txt genes_by_cluster_ALL.txt analyze_clusters_connected_expand_clusters)/genes_by_cluster.txt | sed 's/None/-/g' >> cluster_table.txt
+	cp full_info_table.txt full_info_table_withNOphen.txt
+	sort -u $disease_gene_file > genes
+	aggregate_column_data.rb -i genes -x 0 -a 1 > genes_agg
+	cut -f 1 full_info_table.txt | grep -v -w -F -f - genes_agg | awk '{print $1 "\t-\t-\t" $2 "\t-"}' >> full_info_table_withNOphen.txt
+	merge_tabular.rb full_info_table_withNOphen.txt $all_diseases > full_info_table_withNOphenNOinfo.txt
 }
