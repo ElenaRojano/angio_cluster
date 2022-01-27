@@ -15,6 +15,7 @@ dataset_path=$global_path'/datasets'
 temp_files=$global_path'/executions/temp_files'
 output_folder=$global_path'/executions/aRD_workflow'
 orpha_codes=$dataset_path'/aRD_orpha_codes.txt' #antiguo: raquel_aRD_orpha_codes.txt
+#orpha_codes=$dataset_path'/orphas_2012.txt' #antiguo: raquel_aRD_orpha_codes.txt
 #orpha_codes='/mnt/home/users/pab_001_uma/pedro/proyectos/angio/results/orpha_codes'
 export PATH=$scripts_path:$PATH
 source ~soft_bio_267/initializes/init_pets
@@ -32,8 +33,8 @@ if [ "$1" == "1" ]; then
 	mv $dataset_path'/9606.protein.links.v11.5.txt' $dataset_path'/string_data.txt' # copied from original execution
 	
 	### File with Human GeneID codes and STRING IDs (used as dictionary)
-	wget ftp://string-db.org/mapping_files/STRING_display_names/human.name_2_string.tsv.gz -O $temp_files"/human.name_2_string.tsv.gz"
-    gunzip $temp_files"/human.name_2_string.tsv.gz"
+    wget https://stringdb-static.org/download/protein.info.v11.5/9606.protein.info.v11.5.txt.gz -O $temp_files"/9606.protein.info.v11.5.txt.gz"
+    gunzip $temp_files"/9606.protein.info.v11.5.txt.gz"
 
     ### File with HPO phenotypes
 	####wget http://purl.obolibrary.org/obo/hp/hpoa/genes_to_phenotype.txt -O $temp_files"/genes_to_phenotype.txt"
@@ -61,17 +62,18 @@ if [ "$1" == "1b" ]; then
 	get_disease_mondo.rb -i $orpha_codes -k 'Orphanet:[0-9]*|OMIM:[0-9]*' -f $ontology_file -S $temp_files/supp_mondo_orpha.txt -o $temp_files/disease_mondo_codes.txt
 	get_mondo_genes.rb -i $temp_files/disease_mondo_codes.txt -m $monarch_gene_disease -o $temp_files/disease_mondo_genes.txt
 	cut -f 1,3 $temp_files/disease_mondo_genes.txt > $temp_files/disease_genes.txt
-	#trad_cluster_stringtogen.rb -i $string_network -d $temp_files"/human.name_2_string.tsv" -o temp_files/string_transl_network.txt -n temp_files/untranslated_genes.txt 
+	trad_cluster_stringtogen.rb -i $string_network -d $temp_files"/9606.protein.info.v11.5.txt" -o temp_files/string_transl_network.txt -n temp_files/untranslated_genes.txt 
 fi
 
 
+gene_filter_values=( 0 )
+combined_score_filts=( 900 )
+similarity_measures=( 'lin' )
+#similarity_measures=( 'lin' 'resnik' 'jiang_conrath' )
+min_groups=( 0 )
 if [ "$1" == "2" ]; then
 	source ~soft_bio_267/initializes/init_autoflow
 	echo 'Launching analysis'
-	gene_filter_values=( 0 )
-	combined_score_filts=( 900 )
-	similarity_measures=( 'lin' 'resnik' 'jiang_conrath' )
-	min_groups=( 0 )
 	for similarity_measure in "${similarity_measures[@]}"
 	do	
 		for min_group in "${min_groups[@]}"
@@ -83,8 +85,9 @@ if [ "$1" == "2" ]; then
 					execution_name=$similarity_measure"_"$min_group"_"$combined_score"_"$gene_filter_value
 					var_info=`echo -e "\\$similarity_measure=$similarity_measure,
 					\\$string_network=$temp_files/string_transl_network.txt,
-					\\$hub_zscore=3,
-					\\$string_dict=$temp_files/human.name_2_string.tsv,
+					\\$robustness_fraction=0.01,
+					\\$hub_zscore=2.5,
+					\\$string_dict=$temp_files/9606.protein.info.v11.5.txt,
 					\\$combined_score=$combined_score,
 					\\$min_group=$min_group,
 					\\$gene_filter=$gene_filter_value,
@@ -92,6 +95,7 @@ if [ "$1" == "2" ]; then
 					\\$phenotype_annotation=$temp_files'/dis_name_phen.txt',
 					\\$disease_mondo_genes=$temp_files/disease_mondo_genes.txt,
 					\\$disease_hpo_file=$temp_files/disease_hpos.txt,
+					\\$all_diseases=$orpha_codes,
 					\\$report_template=$global_path/executions/templates/angio_report.erb,
 					\\$scripts_path=$scripts_path" | tr -d '[:space:]' `
 					AutoFlow -w templates/aRD_analysis.txt -t '7-00:00:00' -m '100gb' -c 4 -o $output_folder"/"$execution_name -n 'sr' -e -V $var_info $2
@@ -101,7 +105,20 @@ if [ "$1" == "2" ]; then
 	done
 elif [ "$1" == "2b" ]; then
 	source ~soft_bio_267/initializes/init_autoflow
-	flow_logger -w -e $MAPPING_RESULTS_FOLDER/$sample -r all $2
+	for similarity_measure in "${similarity_measures[@]}"
+	do	
+		for min_group in "${min_groups[@]}"
+		do
+			for combined_score in "${combined_score_filts[@]}"
+			do
+				for gene_filter_value in "${gene_filter_values[@]}"
+				do
+					flow_logger -w -e $output_folder"/"$execution_name -r all $2
+				done
+			done
+		done
+	done
+
 fi
 
 

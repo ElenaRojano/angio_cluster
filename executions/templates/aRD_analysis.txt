@@ -80,8 +80,7 @@ analyze_clusters_[connected_raw_clusters;connected_expand_clusters]){
 	export PATH=$scripts_path:$PATH
 	aggregate_column_data.rb -i generate_clusters)/(*) -x 0 -a 1 > genes_by_cluster.txt
 	?
-	clusters_to_enrichment.R -i genes_by_cluster.txt -w 1 -k "SYMBOL" -p 0.01 -c -o aRD_gene_clusters #-F
-
+	clusters_to_enrichment.R -i genes_by_cluster.txt -w 1 -k "SYMBOL" -p 0.01 -c -o aRD_gene_clusters -M 'PRS' -S 0.7 -C 'ancestor' #-F
 }
 
 report_data){
