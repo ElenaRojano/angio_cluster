@@ -14,6 +14,7 @@ scripts_path=$global_path/scripts
 dataset_path=$global_path'/datasets'
 temp_files=$global_path'/executions/temp_files'
 output_folder=$global_path'/executions/aRD_workflow'
+list_path=$global_path'/lists'
 orpha_codes=$dataset_path'/aRD_orpha_codes.txt' #antiguo: raquel_aRD_orpha_codes.txt
 #orpha_codes=$dataset_path'/orphas_2012.txt' #antiguo: raquel_aRD_orpha_codes.txt
 #orpha_codes='/mnt/home/users/pab_001_uma/pedro/proyectos/angio/results/orpha_codes'
@@ -42,7 +43,7 @@ if [ "$1" == "1" ]; then
 	
     ### MONDO File with genes and diseases
 	wget 'http://purl.obolibrary.org/obo/mondo.obo' -O $dataset_path'/mondo.obo'
-	wget 'https://data.monarchinitiative.org/tsv/all_associations/gene_disease.all.tsv.gz' -O $dataset_path'/gene_disease.all.tsv.gz'
+	wget 'https://data.monarchinitiative.org/tsv/latest/all_associations/gene_disease.all.tsv.gz' -O $dataset_path'/gene_disease.all.tsv.gz'
 	gunzip $dataset_path'/gene_disease.all.tsv.gz'
 fi
 
@@ -85,8 +86,11 @@ if [ "$1" == "2" ]; then
 					execution_name=$similarity_measure"_"$min_group"_"$combined_score"_"$gene_filter_value
 					var_info=`echo -e "\\$similarity_measure=$similarity_measure,
 					\\$string_network=$temp_files/string_transl_network.txt,
-					\\$robustness_fraction=0.01,
+					\\$gmt=$global_path/lists/all.gmt,
+					\\$robustness_fraction=0.02,
 					\\$hub_zscore=2.5,
+					\\$white_list=$list_path'/white_list',
+					\\$gene_ref_list=$list_path'/wp_angio',
 					\\$string_dict=$temp_files/9606.protein.info.v11.5.txt,
 					\\$combined_score=$combined_score,
 					\\$min_group=$min_group,

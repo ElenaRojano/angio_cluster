@@ -15,6 +15,8 @@ option_list <- list(
         	help="The input table not have header line"),
         make_option(c("-x", "--x_values"), type="character", 
 		help="Name of column X with values to be plotted"),
+        make_option(c("-g", "--group_values"), type="character", default=NULL, 
+		help="Name of column with tags to plot different series"),
 	make_option(c("-X", "--x_legend"), type="character", default="",
         	help="Use for set x axis legend")
 	)
@@ -24,8 +26,17 @@ opt <- parse_args(OptionParser(option_list=option_list))
 ## MAIN
 #####################
 data <- read.table(opt$data_file, header=opt$header, sep="\t")
+print(head(data[[opt$group_values]]))
 pdf(paste(opt$output, '.pdf', sep=""))
-	ggplot(data, aes(x=data[[opt$x_values]])) +
-	xlab(opt$x_legend) +
-	geom_density()
+	g <- ggplot(data)
+	if(is.na(opt$group_values)){
+		print('A')
+		g <- g + aes(x=data[[opt$x_values]])
+	}else{
+		print('B')
+		g <- g + aes(x=data[[opt$x_values]], group=data[[opt$group_values]], fill=data[[opt$group_values]])
+	}
+	g <- g + xlab(opt$x_legend)
+	g <- g + geom_density(alpha=.4)
+	g
 dev.off()

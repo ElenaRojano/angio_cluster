@@ -43,6 +43,8 @@
 						)%>
 		</div>
 
+ 
+
 		<h2 style="text-align:center; background-color:#d6eaf8 ">Functional enrichment raw clusters</h2>
 		<div style="width: 100%;">
 				<h3 style="width: 100%;text-align:center; background-color:#d6eaf8 ">Functional enrichment raw clusters in GO: Molecular Functions categories</h3>
@@ -99,5 +101,12 @@
 		</div>
 
 
+		<h2 style="text-align:center; background-color:#d6eaf8 ">GO benchmark </h2> 
+		<div style="width: 100%;">
+ 			<%= scatter2D(id: "cdf_table", header: true, row_names: false, responsive: false,
+                                x_label: 'percentiles', 
+                                title: "cummulative distribution function plot")
+ 			%>
+		</div>
 
 
